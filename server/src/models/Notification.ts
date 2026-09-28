@@ -1,0 +1,58 @@
+import mongoose, { Document, Model, Schema } from 'mongoose';
+
+export type NotificationType = 'Info' | 'Warning' | 'Success' | 'Action_Required';
+
+export interface INotification extends Document {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  relatedEntityType?: 'Application' | 'Approval' | 'Inspection' | 'ComplianceTask' | 'Project' | 'System';
+  relatedEntityId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const NotificationSchema = new Schema<INotification>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: ['Info', 'Warning', 'Success', 'Action_Required'],
+      default: 'Info',
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    relatedEntityType: {
+      type: String,
+      enum: ['Application', 'Approval', 'Inspection', 'ComplianceTask', 'Project', 'System'],
+    },
+    relatedEntityId: {
+      type: String,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export const Notification: Model<INotification> = mongoose.model<INotification>('Notification', NotificationSchema);

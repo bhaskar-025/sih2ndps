@@ -1,0 +1,22 @@
+{
+  "name": "maitri-plus-sih",
+  "version": "1.0.0",
+  "description": "Maharashtra AI-powered Industrial Registration & Tracking Intelligence (MAITRI+) - SIH PS-26130",
+  "scripts": {
+    "server:dev": "npm --prefix server run dev",
+    "client:dev": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:server && npm run build:client"
+  },
+  "keywords": [
+    "sih",
+    "smart-india-hackathon",
+    "maitri-plus",
+    "industrial-clearance",
+    "government-compliance"
+  ],
+  "author": "MAITRI+ Architecture Team",
+  "license": "ISC"
+}

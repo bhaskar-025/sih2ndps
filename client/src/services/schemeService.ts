@@ -75,6 +75,24 @@ export const schemeService = {
     if (found) return found;
     return fallbackSchemes[0];
   },
+
+  recommendSchemes: async (params: {
+    industry?: string;
+    investment?: number;
+    isMsme?: boolean;
+    isWomenEntrepreneur?: boolean;
+    isStartup?: boolean;
+    district?: string;
+    employment?: number;
+    projectId?: string;
+  }): Promise<any[]> => {
+    try {
+      const response = await api.post<any, any>('/ai/recommend-schemes', params);
+      return response.schemes || response.data || [];
+    } catch {
+      return [];
+    }
+  },
 };
 
 export default schemeService;

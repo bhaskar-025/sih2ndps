@@ -95,7 +95,7 @@ export class WorkflowService {
       history: [
         {
           action: 'Application Submission',
-          performedBy: user.userId || user._id,
+          performedBy: user?.userId || user?._id || project.owner,
           toStatus: 'Submitted',
           remarks: 'Initial application submitted via MAITRI+ Single Window portal',
           timestamp: new Date(),
@@ -114,25 +114,14 @@ export class WorkflowService {
     const query: any = {};
 
     // Role-based scoping
-    if (user.role === 'officer') {
-      const orgOrDept = [user.department, user.organization].filter(Boolean).join(' ');
-      // Match common department keywords (MPCB, DISH, Fire, MIDC, Labour, MSEDCL, etc.)
-      const matchedKeyword = ['MPCB', 'Pollution', 'Fire', 'Safety', 'DISH', 'MIDC', 'Labour', 'Electricity', 'MSEDCL', 'Municipal'].find(
-        (kw) => orgOrDept.toLowerCase().includes(kw.toLowerCase())
-      );
-
-      if (matchedKeyword) {
-        query.department = { $regex: new RegExp(matchedKeyword, 'i') };
-      }
-    } else if (user.role === 'entrepreneur') {
+    if (user?.role === 'entrepreneur') {
       // Find all projects owned by this entrepreneur
       const userProjects = await Project.find({ owner: user.userId || user._id }).select('_id');
       query.projectId = { $in: userProjects.map((p) => p._id) };
     }
 
-
     if (params.department && params.department !== 'ALL') {
-      query.department = params.department;
+      query.department = { $regex: new RegExp(params.department, 'i') };
     }
 
     if (params.status && params.status !== 'ALL') {
@@ -242,9 +231,9 @@ export class WorkflowService {
     }
 
     // Role verification
-    if (user.role === 'entrepreneur') {
+    if (user?.role === 'entrepreneur') {
       const ownerId = application.projectId?.owner?._id?.toString() || application.projectId?.owner?.toString();
-      if (ownerId && ownerId !== (user.userId || user._id).toString()) {
+      if (ownerId && ownerId !== (user?.userId || user?._id)?.toString()) {
         throw new Error('Unauthorized access to application');
       }
     }
@@ -301,7 +290,7 @@ export class WorkflowService {
 
     application.history.push({
       action: `Status changed to ${data.status}`,
-      performedBy: user.userId || user._id,
+      performedBy: user?.userId || user?._id,
       fromStatus,
       toStatus: data.status,
       remarks: data.remarks || `Status transitioned to ${data.status}`,
@@ -344,7 +333,7 @@ export class WorkflowService {
       throw new Error('Application not found');
     }
 
-    const userId = user.userId || user._id;
+    const userId = user?.userId || user?._id;
 
     if (data.queryText) {
       // Officer raises query
@@ -433,7 +422,7 @@ export class WorkflowService {
 
     application.history.push({
       action: 'Officer Assigned',
-      performedBy: user.userId || user._id,
+      performedBy: user?.userId || user?._id,
       remarks: `Assigned scrutiny to ${officer.name} (${officer.department || 'Officer'})`,
       timestamp: new Date(),
     });
@@ -476,7 +465,7 @@ export class WorkflowService {
 
     application.history.push({
       action: 'Field Inspection Scheduled',
-      performedBy: user.userId || user._id,
+      performedBy: user?.userId || user?._id,
       fromStatus: 'Under Scrutiny',
       toStatus: 'Inspection Scheduled',
       remarks: data.remarks || `Inspection set for ${parsedDate.toLocaleDateString()}`,
@@ -500,7 +489,7 @@ export class WorkflowService {
       inspectionRecord = new Inspection({
         applicationId: application._id,
         departmentId: new mongoose.Types.ObjectId(), // fallback
-        assignedOfficerId: application.assignedOfficer || user.userId || user._id,
+        assignedOfficerId: application.assignedOfficer || user?.userId || user?._id,
         scheduledDate: parsedDate,
         status: 'Scheduled',
         findings: data.remarks || 'Site inspection scheduled',
@@ -521,7 +510,7 @@ export class WorkflowService {
   static async getOfficerAnalytics(user: any) {
     const filter: any = {};
 
-    if (user.role === 'officer') {
+    if (user?.role === 'officer') {
       const orgOrDept = [user.department, user.organization].filter(Boolean).join(' ');
       const matchedKeyword = ['MPCB', 'Pollution', 'Fire', 'Safety', 'DISH', 'MIDC', 'Labour', 'Electricity', 'MSEDCL', 'Municipal'].find(
         (kw) => orgOrDept.toLowerCase().includes(kw.toLowerCase())

@@ -23,3 +23,11 @@ export * from './FAQ';
 export * from './Regulation';
 export * from './KnowledgeCategory';
 export * from './AuditLog';
+export * from './Industry';
+export * from './Rule';
+export * from './StatutoryApproval';
+export * from './DocumentMaster';
+export * from './Roadmap';
+export * from './ComplianceScore';
+export * from './DocumentAnalysis';
+

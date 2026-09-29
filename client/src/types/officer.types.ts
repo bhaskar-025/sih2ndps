@@ -2,11 +2,15 @@ export type ApplicationStatus =
   | 'Draft'
   | 'Submitted'
   | 'Under Scrutiny'
-  | 'Query Raised'
+  | 'Document Verification'
+  | 'Inspection'
   | 'Inspection Scheduled'
   | 'Inspection Completed'
+  | 'Committee'
   | 'Approved'
-  | 'Rejected';
+  | 'Rejected'
+  | 'Returned'
+  | 'Query Raised';
 
 export type ApplicationPriority = 'Normal' | 'High' | 'Urgent' | 'Critical';
 
@@ -106,6 +110,18 @@ export interface ApplicationItem {
   riskScore?: RiskLevel;
   documents?: any[];
   inspections?: any[];
+  escalated?: boolean;
+  certificateNumber?: string;
+  certificateIssuedAt?: string;
+  certificateRemarks?: string;
+  forwardedFrom?: string;
+  forwardedTo?: string;
+  internalNotes?: Array<{
+    officerId?: string;
+    officerName: string;
+    note: string;
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

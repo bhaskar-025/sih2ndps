@@ -1,0 +1,72 @@
+[
+  {
+    "_id": "comp-001",
+    "projectId": "proj-001",
+    "complianceName": "MPCB Annual Environmental Statement (Form V)",
+    "department": "MPCB",
+    "frequency": "Annual",
+    "nextDueDate": "2026-09-30T00:00:00.000Z",
+    "status": "Upcoming",
+    "penaltyRisk": "High",
+    "penaltyAmount": 100000,
+    "priority": "High",
+    "description": "Annual audit of raw materials, water usage, and pollution discharge under Environment (Protection) Rules.",
+    "officerInCharge": "Dr. Rajesh Kadam"
+  },
+  {
+    "_id": "comp-002",
+    "projectId": "proj-001",
+    "complianceName": "DISH Half-Yearly Safety & Hazardous Waste Return",
+    "department": "DISH",
+    "frequency": "Half-Yearly",
+    "nextDueDate": "2026-09-15T00:00:00.000Z",
+    "status": "Overdue",
+    "penaltyRisk": "Critical",
+    "penaltyAmount": 250000,
+    "priority": "Critical",
+    "description": "Reporting of hazardous waste manifest transfers and internal safety committee minutes.",
+    "officerInCharge": "Er. Sneha Patil"
+  },
+  {
+    "_id": "comp-003",
+    "projectId": "proj-001",
+    "complianceName": "DMFS Periodic Fire Hydrant & Extinguisher Inspection",
+    "department": "DMFS",
+    "frequency": "Quarterly",
+    "nextDueDate": "2026-10-15T00:00:00.000Z",
+    "status": "Due Soon",
+    "penaltyRisk": "Medium",
+    "penaltyAmount": 50000,
+    "priority": "Medium",
+    "description": "Form B certificate submission from licensed fire agency certifying operating condition of fire protection system.",
+    "officerInCharge": "Smt. Anjali Shinde"
+  },
+  {
+    "_id": "comp-004",
+    "projectId": "proj-001",
+    "complianceName": "Labour Dept Contract Labour Annual Licensing Renewal",
+    "department": "Labour Commissionerate",
+    "frequency": "Annual",
+    "nextDueDate": "2026-11-01T00:00:00.000Z",
+    "status": "Renewal",
+    "penaltyRisk": "Low",
+    "penaltyAmount": 20000,
+    "priority": "Low",
+    "description": "Renewal of contractor registration under Contract Labour (Regulation and Abolition) Act 1970.",
+    "officerInCharge": "Shri M. B. Kamble"
+  },
+  {
+    "_id": "comp-005",
+    "projectId": "proj-001",
+    "complianceName": "MSEDCL Energy Audit & Harmonic Distortion Filing",
+    "department": "MSEDCL",
+    "frequency": "Annual",
+    "nextDueDate": "2026-08-01T00:00:00.000Z",
+    "status": "Completed",
+    "penaltyRisk": "Low",
+    "penaltyAmount": 0,
+    "priority": "Low",
+    "description": "Certified energy audit report for HT industrial consumers above 5 MVA sanctioned load.",
+    "officerInCharge": "Er. Amit Gokhale"
+  }
+]

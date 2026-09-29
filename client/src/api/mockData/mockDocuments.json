@@ -1,0 +1,137 @@
+[
+  {
+    "_id": "doc-001",
+    "projectId": "proj-001",
+    "name": "Factory Layout & Architecture Blueprints",
+    "documentType": "Engineering Blueprint",
+    "fileName": "Factory_Layout_Arch_v2.pdf",
+    "fileUrl": "/uploads/documents/factory_layout.pdf",
+    "mimeType": "application/pdf",
+    "fileSize": 18450000,
+    "version": 2,
+    "status": "Verified",
+    "verificationStatus": "Verified",
+    "ocrStatus": "Verified",
+    "ocrConfidence": 98.9,
+    "isDigitallySigned": true,
+    "signerName": "Director Nitin Gadve (eMudhra Class 3)",
+    "signatureTimestamp": "2026-09-18T14:20:00.000Z",
+    "usedInApprovals": [
+      "Consent to Establish (MPCB)",
+      "Factory License (DISH)",
+      "Building Plan Approval (MIDC)",
+      "Fire Safety NOC (DMFS)"
+    ],
+    "uploadedBy": {
+      "name": "Nitin Gadve",
+      "email": "nitin@apexmobility.com"
+    },
+    "uploadedAt": "2026-09-18T12:00:00.000Z"
+  },
+  {
+    "_id": "doc-002",
+    "projectId": "proj-001",
+    "name": "Environmental Impact Assessment (EIA)",
+    "documentType": "Environmental Audit",
+    "fileName": "EIA_Full_Report_2026.pdf",
+    "fileUrl": "/uploads/documents/eia_report.pdf",
+    "mimeType": "application/pdf",
+    "fileSize": 24200000,
+    "version": 1,
+    "status": "Verified",
+    "verificationStatus": "Verified",
+    "ocrStatus": "Verified",
+    "ocrConfidence": 99.4,
+    "isDigitallySigned": true,
+    "signerName": "Accredited EIA Consultant QCI/NABET",
+    "signatureTimestamp": "2026-09-15T10:10:00.000Z",
+    "usedInApprovals": [
+      "Consent to Establish (MPCB)",
+      "Environmental Clearance (SEIAA)"
+    ],
+    "uploadedBy": {
+      "name": "Nitin Gadve",
+      "email": "nitin@apexmobility.com"
+    },
+    "uploadedAt": "2026-09-18T12:05:00.000Z"
+  },
+  {
+    "_id": "doc-003",
+    "projectId": "proj-001",
+    "name": "Fire Safety Hydraulic Network & Sprinklers",
+    "documentType": "Fire Engineering Drawing",
+    "fileName": "Hydraulic_Fire_Calculation.pdf",
+    "fileUrl": "/uploads/documents/fire_hydraulic.pdf",
+    "mimeType": "application/pdf",
+    "fileSize": 9100000,
+    "version": 1,
+    "status": "Pending Verification",
+    "verificationStatus": "Under Verification",
+    "ocrStatus": "Processed",
+    "ocrConfidence": 97.2,
+    "isDigitallySigned": true,
+    "signerName": "Chartered Fire Engineer",
+    "signatureTimestamp": "2026-09-19T09:30:00.000Z",
+    "usedInApprovals": [
+      "Fire Safety NOC (DMFS)"
+    ],
+    "uploadedBy": {
+      "name": "Nitin Gadve",
+      "email": "nitin@apexmobility.com"
+    },
+    "uploadedAt": "2026-09-19T11:00:00.000Z"
+  },
+  {
+    "_id": "doc-004",
+    "projectId": "proj-001",
+    "name": "MIDC Registered Land Possession Agreement",
+    "documentType": "Land Title & Registry",
+    "fileName": "MIDC_Chakan_Land_Lease_Deed.pdf",
+    "fileUrl": "/uploads/documents/land_deed.pdf",
+    "mimeType": "application/pdf",
+    "fileSize": 11500000,
+    "version": 1,
+    "status": "Verified",
+    "verificationStatus": "Verified",
+    "ocrStatus": "Verified",
+    "ocrConfidence": 99.7,
+    "isDigitallySigned": true,
+    "signerName": "Sub-Registrar Khed-Pune",
+    "signatureTimestamp": "2026-08-10T15:00:00.000Z",
+    "usedInApprovals": [
+      "MIDC Plot Possession",
+      "Consent to Establish (MPCB)",
+      "HT Feeder Sanction (MSEDCL)"
+    ],
+    "uploadedBy": {
+      "name": "Nitin Gadve",
+      "email": "nitin@apexmobility.com"
+    },
+    "uploadedAt": "2026-08-16T10:00:00.000Z"
+  },
+  {
+    "_id": "doc-005",
+    "projectId": "proj-001",
+    "name": "Groundwater Extraction NOC (CGWA)",
+    "documentType": "Water Resources Clearance",
+    "fileName": "CGWA_Borewell_Permit.pdf",
+    "fileUrl": "/uploads/documents/cgwa_permit.pdf",
+    "mimeType": "application/pdf",
+    "fileSize": 4500000,
+    "version": 1,
+    "status": "Expired",
+    "verificationStatus": "Rejected",
+    "ocrStatus": "Processed",
+    "ocrConfidence": 96.0,
+    "expiryDate": "2026-08-30T00:00:00.000Z",
+    "remarks": "Permit expired on 30-Aug-2026. Renewal application must be filed.",
+    "usedInApprovals": [
+      "Water Supply Connection (MIDC)"
+    ],
+    "uploadedBy": {
+      "name": "Nitin Gadve",
+      "email": "nitin@apexmobility.com"
+    },
+    "uploadedAt": "2026-08-16T10:15:00.000Z"
+  }
+]

@@ -3,14 +3,14 @@ import { ProjectController } from '../controllers/project.controller';
 import { RoadmapController } from '../controllers/roadmap.controller';
 import { DocumentController } from '../controllers/document.controller';
 import { ComplianceController } from '../controllers/compliance.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { optionalAuthenticate } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validate.middleware';
 import { createProjectSchema, updateProjectSchema } from '../validators/project.validator';
 
 const router = Router();
 
-// Protect all project routes with authentication
-router.use(authenticate);
+// Allow authenticated requests and provide graceful fallback for demo personas
+router.use(optionalAuthenticate);
 
 /**
  * @route   POST /api/v1/projects

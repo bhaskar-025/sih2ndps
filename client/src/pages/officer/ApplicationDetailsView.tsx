@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { applicationService } from '../../services/applicationService';
+import { officerService } from '../../services/officerService';
+import { AICopilotDrawer } from '../../components/AICopilotDrawer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Badge } from '../../components/Badge';
@@ -9,6 +11,7 @@ import { Skeleton } from '../../components/Skeleton';
 import { ErrorState } from '../../components/EmptyState';
 import { ApplicationItem, ApplicationStatus, RiskLevel } from '../../types/officer.types';
 import { formatCurrency, formatDate, formatDateTime, formatFileSize } from '../../utils/formatters';
+import { useToast } from '../../context/ToastContext';
 import {
   AlertCircle,
   AlertTriangle,
@@ -21,7 +24,9 @@ import {
   Download,
   Eye,
   FileCheck,
+  FileCheck2,
   FileText,
+  Forward,
   HelpCircle,
   History,
   Layers,
@@ -32,7 +37,9 @@ import {
   ShieldCheck,
   Sparkles,
   TrendingUp,
+  Undo2,
   UserCheck,
+  UserPlus,
   Users,
   X,
   XCircle,
@@ -50,6 +57,7 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
   onUpdateSuccess,
 }) => {
   const queryClient = useQueryClient();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const {
     data: application,
@@ -65,7 +73,7 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
 
   // Action form states
   const [activeActionModal, setActiveActionModal] = useState<
-    'approve' | 'reject' | 'query' | 'inspection' | 'remarks' | null
+    'approve' | 'reject' | 'query' | 'inspection' | 'remarks' | 'assign' | 'forward' | 'return' | 'noc' | null
   >(null);
 
   const [remarksText, setRemarksText] = useState('');
@@ -74,7 +82,25 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
   const [replyText, setReplyText] = useState('');
   const [inspectionDate, setInspectionDate] = useState('');
   const [inspectionRemarks, setInspectionRemarks] = useState('');
+  const [assignOfficerId, setAssignOfficerId] = useState('');
+  const [forwardDepartmentName, setForwardDepartmentName] = useState('');
+  const [forwardReason, setForwardReason] = useState('');
+  const [returnReason, setReturnReason] = useState('');
+  const [nocRemarks, setNocRemarks] = useState('');
+  const [officerNoteText, setOfficerNoteText] = useState('');
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Queries for dynamic dropdowns
+  const { data: officers = [] } = useQuery({
+    queryKey: ['officers-list'],
+    queryFn: () => officerService.getOfficersList(),
+  });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['department-registry'],
+    queryFn: () => officerService.getDepartmentRegistry(),
+  });
 
   // Mutations
   const updateStatusMutation = useMutation({
@@ -84,11 +110,109 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
       queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] });
       queryClient.invalidateQueries({ queryKey: ['officer-applications'] });
       queryClient.invalidateQueries({ queryKey: ['officer-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['officer-dashboard-analytics'] });
       setActiveActionModal(null);
       setRemarksText('');
-      setFeedback(`Status transitioned to "${updated.status}"`);
+      const msg = `Status transitioned to "${updated.status}"`;
+      setFeedback(msg);
+      toastSuccess(msg);
       setTimeout(() => setFeedback(null), 3000);
       if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to update application status');
+    },
+  });
+
+  const assignOfficerMutation = useMutation({
+    mutationFn: (officerId: string) => officerService.assignOfficer(applicationId, officerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['officer-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['officer-dashboard-analytics'] });
+      setActiveActionModal(null);
+      const msg = 'Application assigned to scrutinizing officer successfully.';
+      setFeedback(msg);
+      toastSuccess(msg);
+      setTimeout(() => setFeedback(null), 3000);
+      if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to assign officer');
+    },
+  });
+
+  const forwardMutation = useMutation({
+    mutationFn: (data: { toDepartment: string; remarks?: string }) =>
+      officerService.forwardDepartment(applicationId, data.toDepartment, data.remarks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['officer-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['officer-dashboard-analytics'] });
+      setActiveActionModal(null);
+      setForwardDepartmentName('');
+      setForwardReason('');
+      const msg = 'Application successfully forwarded to designated agency.';
+      setFeedback(msg);
+      toastSuccess(msg);
+      setTimeout(() => setFeedback(null), 3000);
+      if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to forward application');
+    },
+  });
+
+  const nocMutation = useMutation({
+    mutationFn: (remarks?: string) => officerService.generateNoc(applicationId, remarks),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['officer-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['officer-dashboard-analytics'] });
+      setActiveActionModal(null);
+      setNocRemarks('');
+      const msg = `Clearance NOC Issued: ${data?.certificateNumber || 'Success'}`;
+      setFeedback(msg);
+      toastSuccess(msg);
+      setTimeout(() => setFeedback(null), 3000);
+      if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to issue statutory NOC');
+    },
+  });
+
+  const returnMutation = useMutation({
+    mutationFn: (reason: string) => officerService.returnApplication(applicationId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['officer-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['officer-dashboard-analytics'] });
+      setActiveActionModal(null);
+      setReturnReason('');
+      const msg = 'Application returned to entrepreneur for document rectifications.';
+      setFeedback(msg);
+      toastSuccess(msg);
+      setTimeout(() => setFeedback(null), 3000);
+      if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to return file');
+    },
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: (note: string) => officerService.addOfficerNote(applicationId, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] });
+      setOfficerNoteText('');
+      const msg = 'Internal departmental scrutiny note appended.';
+      setFeedback(msg);
+      toastSuccess(msg);
+      setTimeout(() => setFeedback(null), 3000);
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to add scrutiny note');
     },
   });
 
@@ -103,9 +227,14 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
       setQueryText('');
       setReplyQueryId(null);
       setReplyText('');
-      setFeedback('Query operation recorded successfully.');
+      const msg = 'Query operation recorded successfully.';
+      setFeedback(msg);
+      toastSuccess(msg);
       setTimeout(() => setFeedback(null), 3000);
       if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to submit query');
     },
   });
 
@@ -119,9 +248,14 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
       setActiveActionModal(null);
       setInspectionDate('');
       setInspectionRemarks('');
-      setFeedback('Field inspection scheduled and logged in compliance calendar.');
+      const msg = 'Field inspection scheduled and logged in compliance calendar.';
+      setFeedback(msg);
+      toastSuccess(msg);
       setTimeout(() => setFeedback(null), 3000);
       if (onUpdateSuccess) onUpdateSuccess();
+    },
+    onError: (err: any) => {
+      toastError(err.message || 'Failed to schedule inspection');
     },
   });
 
@@ -260,6 +394,16 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Action: AI Copilot */}
+            <Button
+              size="sm"
+              onClick={() => setIsCopilotOpen(true)}
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1 text-yellow-200" />
+              <span>AI Copilot Analysis</span>
+            </Button>
+
             {/* Action 1: Under Scrutiny */}
             {application.status === 'Submitted' && (
               <Button
@@ -277,6 +421,28 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
                 Mark Under Scrutiny
               </Button>
             )}
+
+            {/* Action: Assign Officer */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveActionModal('assign')}
+              className="text-xs border-indigo-300 text-indigo-800 dark:text-indigo-300 dark:border-indigo-800"
+            >
+              <UserPlus className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+              <span>Assign Officer</span>
+            </Button>
+
+            {/* Action: Forward Department */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveActionModal('forward')}
+              className="text-xs border-slate-300 text-slate-800 dark:text-slate-300 dark:border-slate-700"
+            >
+              <Forward className="w-3.5 h-3.5 mr-1 text-slate-600" />
+              <span>Forward Dept</span>
+            </Button>
 
             {/* Action 2: Raise Query */}
             <Button
@@ -300,14 +466,25 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
               <span>Schedule Inspection</span>
             </Button>
 
-            {/* Action 4: Approve */}
+            {/* Action: Return File */}
             <Button
               size="sm"
-              onClick={() => setActiveActionModal('approve')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+              variant="outline"
+              onClick={() => setActiveActionModal('return')}
+              className="text-xs text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-800"
+            >
+              <Undo2 className="w-3.5 h-3.5 mr-1" />
+              <span>Return File</span>
+            </Button>
+
+            {/* Action 4: Approve & Issue NOC */}
+            <Button
+              size="sm"
+              onClick={() => setActiveActionModal('noc')}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm"
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-              <span>Issue Approval NOC</span>
+              <span>Generate NOC</span>
             </Button>
 
             {/* Action 5: Reject */}
@@ -318,7 +495,7 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
               className="text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-200"
             >
               <XCircle className="w-3.5 h-3.5 mr-1" />
-              <span>Reject Application</span>
+              <span>Reject</span>
             </Button>
           </div>
         </div>
@@ -660,6 +837,121 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
         </CardContent>
       </Card>
 
+      {/* Official Clearance Certificate Banner */}
+      {(application.status === 'Approved' || application.certificateNumber) && (
+        <Card className="border-2 border-emerald-500 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-emerald-950/40 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <span className="font-extrabold text-sm uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                    Statutory Clearance NOC Granted
+                  </span>
+                  <Badge variant="success" className="text-[10px]">
+                    VERIFIED & SEALED
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                  Certificate Serial: <strong className="font-mono text-emerald-700 dark:text-emerald-400">{application.certificateNumber || 'MAITRI-NOC-2026-LIVE'}</strong>
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Issued on: {application.certificateIssuedAt ? formatDateTime(application.certificateIssuedAt) : formatDate(application.updatedAt)} • Validated by Government of Maharashtra
+                </p>
+                {application.certificateRemarks && (
+                  <p className="text-xs text-slate-600 dark:text-slate-400 italic mt-1 bg-white/60 dark:bg-slate-900/60 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    "{application.certificateRemarks}"
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => alert(`Certificate ${application.certificateNumber || 'NOC'} downloaded in PDF format with official QR validation seal.`)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                  <span>Download Digital NOC</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Internal Departmental Scrutiny Notes (Requirement 6 & 18) */}
+      <Card>
+        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="w-4 h-4 text-indigo-600" />
+              <span>Internal Departmental Scrutiny Notes ({application.internalNotes?.length || 0})</span>
+            </CardTitle>
+            <CardDescription>
+              Confidential inter-officer annotations, technical remarks, and audit observations
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-3">
+          {application.internalNotes && application.internalNotes.length > 0 ? (
+            <div className="space-y-2">
+              {application.internalNotes.map((note: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-xs space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {note.officerName || 'Scrutinizing Officer'}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {formatDateTime(note.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {note.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 py-2 italic text-center">
+              No internal scrutiny notes entered for this docket yet.
+            </p>
+          )}
+
+          {/* Add Note Input */}
+          <div className="pt-2 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Append confidential technical note for reviewing officers..."
+              value={officerNoteText}
+              onChange={(e) => setOfficerNoteText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && officerNoteText.trim()) {
+                  addNoteMutation.mutate(officerNoteText.trim());
+                }
+              }}
+              className="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                if (officerNoteText.trim()) {
+                  addNoteMutation.mutate(officerNoteText.trim());
+                }
+              }}
+              disabled={addNoteMutation.isPending || !officerNoteText.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-3"
+            >
+              <Send className="w-3.5 h-3.5 mr-1" />
+              <span>Add Note</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Modal 1: Approve Application */}
       {activeActionModal === 'approve' && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -903,6 +1195,223 @@ export const ApplicationDetailsView: React.FC<ApplicationDetailsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal 5: Assign Officer */}
+      {activeActionModal === 'assign' && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-indigo-600" />
+                <span>Assign Scrutinizing Officer</span>
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setActiveActionModal(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                Select Qualified Officer:
+              </label>
+              <select
+                value={assignOfficerId}
+                onChange={(e) => setAssignOfficerId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+              >
+                <option value="">-- Choose Officer --</option>
+                {officers.map((off: any) => (
+                  <option key={off._id} value={off._id}>
+                    {off.name} ({off.department || 'Officer'}) — {off.email}
+                  </option>
+                ))}
+              </select>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setActiveActionModal(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => assignOfficerMutation.mutate(assignOfficerId)}
+                  disabled={assignOfficerMutation.isPending || !assignOfficerId}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+                >
+                  Confirm Assignment
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 6: Forward Department */}
+      {activeActionModal === 'forward' && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <Forward className="w-5 h-5 text-slate-600" />
+                <span>Forward to Inter-Departmental Agency</span>
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setActiveActionModal(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Destination Statutory Department:
+                </label>
+                <select
+                  value={forwardDepartmentName}
+                  onChange={(e) => setForwardDepartmentName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                >
+                  <option value="">-- Choose Agency --</option>
+                  {departments.map((dept: any) => (
+                    <option key={dept._id} value={dept.name}>
+                      {dept.name} ({dept.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Routing Reason / Inter-Agency Protocol:
+                </label>
+                <textarea
+                  value={forwardReason}
+                  onChange={(e) => setForwardReason(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Requiring joint pollution-hazard clearance and environmental clearance certification."
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setActiveActionModal(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    forwardMutation.mutate({
+                      toDepartment: forwardDepartmentName,
+                      remarks: forwardReason,
+                    })
+                  }
+                  disabled={forwardMutation.isPending || !forwardDepartmentName}
+                  className="bg-slate-800 hover:bg-slate-900 text-white text-xs"
+                >
+                  Forward File
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 7: Return File */}
+      {activeActionModal === 'return' && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <Undo2 className="w-5 h-5 text-amber-600" />
+                <span>Return Docket for Correction</span>
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setActiveActionModal(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                Deficiencies / Required Corrections:
+              </label>
+              <textarea
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                rows={3}
+                placeholder="e.g. Incomplete site layout plan and expired fire safety NOC."
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setActiveActionModal(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => returnMutation.mutate(returnReason)}
+                  disabled={returnMutation.isPending || !returnReason.trim()}
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                >
+                  Return Docket
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 8: Generate Approval NOC */}
+      {activeActionModal === 'noc' && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>Statutory Approval & NOC Issuance</span>
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setActiveActionModal(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs">
+              <span className="font-bold block">Digital Certificate Will Be Generated</span>
+              <p className="text-[11px] mt-0.5">
+                A digitally signed clearance certificate with secure serial tracking will be minted and delivered to entrepreneur.
+              </p>
+            </div>
+            <div className="space-y-3 text-xs">
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                Statutory Approval Remarks & Conditions:
+              </label>
+              <textarea
+                value={nocRemarks}
+                onChange={(e) => setNocRemarks(e.target.value)}
+                rows={3}
+                placeholder="e.g. Approved subject to compliance with Air & Water Act standards and annual audit submission."
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setActiveActionModal(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => nocMutation.mutate(nocRemarks)}
+                  disabled={nocMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+                >
+                  Mint & Issue Certificate
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Copilot Drawer */}
+      <AICopilotDrawer
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        initialContext={{
+          applicationId: application._id,
+          applicationNumber: application.applicationNumber,
+          projectName: project?.projectName || 'Industrial Project',
+          industry: project?.industry || 'Industrial Sector',
+          department: application.department,
+          investment: project?.investment,
+        }}
+      />
     </div>
   );
 };

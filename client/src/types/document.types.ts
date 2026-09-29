@@ -34,6 +34,11 @@ export interface ProjectDocumentItem {
   expiryDate?: string;
   remarks?: string;
   usedInApprovals: string[];
+  ocrStatus?: 'Processed' | 'Pending' | 'Verified' | 'Failed';
+  ocrConfidence?: number;
+  isDigitallySigned?: boolean;
+  signerName?: string;
+  signatureTimestamp?: string;
   createdAt: string;
   updatedAt: string;
 }

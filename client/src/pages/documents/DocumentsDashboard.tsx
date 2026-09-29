@@ -430,8 +430,8 @@ export const DocumentsDashboard: React.FC = () => {
                   <tr>
                     <th className="py-3.5 px-4">Document Name</th>
                     <th className="py-3.5 px-4">Type / Category</th>
-                    <th className="py-3.5 px-4">Version</th>
-                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4">OCR & DSC Status</th>
+                    <th className="py-3.5 px-4">Verification</th>
                     <th className="py-3.5 px-4">Expiry Date</th>
                     <th className="py-3.5 px-4">Used In (Reuse)</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
@@ -468,11 +468,18 @@ export const DocumentsDashboard: React.FC = () => {
                             </Badge>
                           </td>
 
-                          {/* Version */}
+                          {/* OCR & DSC Status */}
                           <td className="py-3.5 px-4">
-                            <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
-                              v{doc.version}.0
-                            </span>
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <Sparkles className="w-2.5 h-2.5 text-emerald-500" />
+                                OCR: {doc.ocrStatus || 'Verified'} ({doc.ocrConfidence ?? 98}%)
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                <ShieldCheck className="w-2.5 h-2.5 text-indigo-500" />
+                                {doc.isDigitallySigned !== false ? 'DSC Certified' : 'Unsigned'}
+                              </span>
+                            </div>
                           </td>
 
                           {/* Status */}

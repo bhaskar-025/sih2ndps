@@ -100,6 +100,26 @@ export const documentService = {
     );
     return response.data;
   },
+
+  /**
+   * Analyze document with Gemini Vision for automatic type detection and multi-approval reuse
+   */
+  analyzeDocument: async (
+    file: File,
+    options?: { projectId?: string; documentName?: string }
+  ): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.projectId) formData.append('projectId', options.projectId);
+    if (options?.documentName) formData.append('documentName', options.documentName);
+
+    const response = await api.post<any, any>('/ai/analyze-document', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response;
+  },
 };
 
 export default documentService;

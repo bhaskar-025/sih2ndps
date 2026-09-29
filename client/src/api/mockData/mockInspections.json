@@ -1,0 +1,111 @@
+[
+  {
+    "_id": "insp-001",
+    "projectId": {
+      "_id": "proj-001",
+      "projectName": "Chakan EV Mega Gigafactory",
+      "companyName": "Apex Mobility Solutions Pvt Ltd",
+      "district": "Pune",
+      "location": "Plot A-12, MIDC Chakan Phase II, Pune"
+    },
+    "applicationId": {
+      "_id": "app-001",
+      "applicationNumber": "MH-2026-MPCB-08912",
+      "serviceName": "Consent to Establish (CTE - Red Category)",
+      "department": "MPCB"
+    },
+    "inspectorId": {
+      "_id": "off-001",
+      "name": "Dr. Rajesh Kadam",
+      "email": "officer@maitri.com"
+    },
+    "scheduledDate": "2026-09-29T14:30:00.000Z",
+    "status": "Scheduled",
+    "remarks": "On-site assessment of hazardous battery cell assembly zone and Effluent Treatment Plant.",
+    "geoTag": "18.7562° N, 73.8541° E (Within 12m of unit centroid)",
+    "gpsStatus": "GPS Matched (Accuracy 4m)",
+    "checklist": [
+      { "item": "Effluent Treatment Plant (ETP) capacity validation", "passed": true },
+      { "item": "Hazardous chemical storage isolation barrier check", "passed": true },
+      { "item": "Battery cell dry room safety ventilation exhaust", "passed": true },
+      { "item": "Fire safety hydrants and emergency assembly point setup", "passed": true },
+      { "item": "Worker safety personal protective equipment inventory", "passed": false }
+    ],
+    "photos": [
+      "/images/etp_site_inspection.jpg",
+      "/images/hazmat_isolation_wall.jpg"
+    ],
+    "reportUrl": "/reports/inspection_report_chakan_ev.pdf",
+    "createdAt": "2026-09-24T10:00:00.000Z"
+  },
+  {
+    "_id": "insp-002",
+    "projectId": {
+      "_id": "proj-002",
+      "projectName": "Solapur Bio-Ethanol Refining Complex",
+      "companyName": "MahaGreen Biofuels Ltd",
+      "district": "Solapur",
+      "location": "Kumbhari Industrial Area, Solapur"
+    },
+    "applicationId": {
+      "_id": "app-002",
+      "applicationNumber": "MH-2026-DMFS-04190",
+      "serviceName": "Final Fire Safety NOC & Building Clearance",
+      "department": "DMFS"
+    },
+    "inspectorId": {
+      "_id": "off-004",
+      "name": "Smt. Anjali Shinde",
+      "email": "anjali.s@maitri.gov.in"
+    },
+    "scheduledDate": "2026-09-29T16:00:00.000Z",
+    "status": "Scheduled",
+    "remarks": "Boiler room safety pressure valves and foam sprinkler validation for ethanol tanks.",
+    "geoTag": "17.6599° N, 75.9064° E",
+    "gpsStatus": "GPS Matched (Accuracy 5m)",
+    "checklist": [
+      { "item": "Ethanol storage tank automatic foam drench system", "passed": true },
+      { "item": "Industrial boiler explosion relief flap check", "passed": true },
+      { "item": "Peripheral ring main fire water storage tank (500kL)", "passed": true }
+    ],
+    "photos": [],
+    "createdAt": "2026-09-25T11:30:00.000Z"
+  },
+  {
+    "_id": "insp-003",
+    "projectId": {
+      "_id": "proj-003",
+      "projectName": "Thane Biopharma Sterile Formulation Unit",
+      "companyName": "BioGenix Life Sciences Ltd",
+      "district": "Thane",
+      "location": "TTC Industrial Area, Mahape, Navi Mumbai"
+    },
+    "applicationId": {
+      "_id": "app-003",
+      "applicationNumber": "MH-2026-DISH-01994",
+      "serviceName": "Factory License & Hazardous Process Approval",
+      "department": "DISH"
+    },
+    "inspectorId": {
+      "_id": "off-002",
+      "name": "Er. Sneha Patil",
+      "email": "sneha.patil@maitri.gov.in"
+    },
+    "scheduledDate": "2026-09-20T10:00:00.000Z",
+    "status": "Completed",
+    "result": "Pass",
+    "remarks": "Clean room HEPA filtration and factory safety machinery guards fully compliant with DISH regulations.",
+    "geoTag": "19.1128° N, 73.0163° E",
+    "gpsStatus": "GPS Matched (Accuracy 3m)",
+    "checklist": [
+      { "item": "Clean room air locks and pressure differential sensors", "passed": true },
+      { "item": "Solvent recovery system venting and grounding check", "passed": true },
+      { "item": "Emergency eye-wash stations and chemical shower heads", "passed": true }
+    ],
+    "photos": [
+      "/images/sterile_cleanroom_inspection.jpg"
+    ],
+    "reportUrl": "/reports/dish_inspection_cleared_biogenix.pdf",
+    "createdAt": "2026-09-14T09:00:00.000Z"
+  }
+]

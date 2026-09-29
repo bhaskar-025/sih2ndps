@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
+import { useOfficer } from '../context/OfficerContext';
 import { ThemeToggle } from './ThemeToggle';
 import { RoleSwitcher } from './RoleSwitcher';
 import { Badge } from './Badge';
@@ -38,62 +39,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const { openGlobalSearch } = useOfficer();
+
   const {
     notifications: liveNotifications,
-    unreadCount: liveUnreadCount,
+    unreadCount,
     markAsRead,
   } = useNotifications();
 
-  // If live notifications are populated, use them; otherwise fallback gracefully
-  const displayNotifications = liveNotifications.length > 0
-    ? liveNotifications.map((n: any) => ({
-        id: n._id,
-        title: n.title,
-        desc: n.message || n.desc,
-        time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
-        type: n.type || 'approval',
-        unread: !n.isRead && !n.read,
-        link: n.relatedEntityType === 'Application'
-          ? '/applications'
-          : n.relatedEntityType === 'Inspection'
-          ? '/officer'
-          : n.relatedEntityType === 'Document'
-          ? '/documents'
-          : n.relatedEntityType === 'ComplianceTask'
-          ? '/compliance'
-          : '/applications',
-      }))
-    : [
-        {
-          id: 'mock-1',
-          title: 'MPCB Scrutiny Stage 2',
-          desc: 'Consent to Establish (CTE) application in final verification stage.',
-          time: '10m ago',
-          type: 'approval',
-          unread: true,
-          link: '/applications',
-        },
-        {
-          id: 'mock-2',
-          title: 'Joint Site Inspection Scheduled',
-          desc: 'Factory Inspector & Fire Officer visiting Baramati Bio-Energy Unit on Oct 04.',
-          time: '1h ago',
-          type: 'inspection',
-          unread: true,
-          link: '/officer',
-        },
-        {
-          id: 'mock-3',
-          title: 'Document Verified via OCR',
-          desc: 'MIDC Land Allotment Letter verified with zero discrepancies.',
-          time: '4h ago',
-          type: 'document',
-          unread: false,
-          link: '/documents',
-        },
-      ];
-
-  const unreadCount = liveNotifications.length > 0 ? liveUnreadCount : displayNotifications.filter((n) => n.unread).length;
+  // Purely dynamic notification stream from API/Mock Service Layer - zero hardcoding
+  const displayNotifications = liveNotifications.map((n) => ({
+    id: n._id,
+    title: n.title,
+    desc: n.message,
+    time: n.timestamp ? new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
+    type: n.type?.toLowerCase() || 'approval',
+    unread: !n.read,
+    link: n.actionUrl || (n.type === 'Inspection' ? '/officer' : '/applications'),
+  }));
 
   // Keyboard shortcut Ctrl+K or Cmd+K to open spotlight search
   useEffect(() => {
@@ -156,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
 
           {/* Spotlight Search trigger */}
           <div
-            onClick={() => setShowSearchModal(true)}
+            onClick={() => openGlobalSearch()}
             className="relative hidden sm:flex items-center w-64 md:w-80 lg:w-96 rounded-xl border border-slate-200/90 bg-slate-50/80 pl-9 pr-3 py-2 text-xs text-slate-400 hover:border-orange-500/50 hover:bg-white dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-orange-500/50 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-sm group"
           >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-orange-500 transition-colors" />
@@ -171,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Mobile search trigger icon */}
           <button
-            onClick={() => setShowSearchModal(true)}
+            onClick={() => openGlobalSearch()}
             className="sm:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
             title="Search"
           >

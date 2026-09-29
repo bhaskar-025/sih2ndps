@@ -1,0 +1,91 @@
+{
+  "kpi": {
+    "pendingReviews": 14,
+    "pendingScrutiny": 14,
+    "approvedToday": 6,
+    "approvalsIssued": 6,
+    "rejected": 2,
+    "queriesRaised": 5,
+    "applicationsWaiting": 8,
+    "averageSlaRemaining": 18,
+    "inspectionToday": 3,
+    "inspectionsScheduled": 3,
+    "totalProjects": 24,
+    "todaysDeadline": 4,
+    "overdue": 2,
+    "highRiskApplications": 3,
+    "departmentsActive": 8,
+    "totalApplications": 31
+  },
+  "charts": {
+    "districtBreakdown": [
+      { "district": "Pune", "count": 9 },
+      { "district": "Thane", "count": 6 },
+      { "district": "Nagpur", "count": 5 },
+      { "district": "Nashik", "count": 4 },
+      { "district": "Aurangabad", "count": 4 },
+      { "district": "Raigad", "count": 3 }
+    ],
+    "industryBreakdown": [
+      { "industry": "Electric Mobility & Electronics", "count": 8 },
+      { "industry": "Renewable Energy & Biofuels", "count": 7 },
+      { "industry": "Pharmaceuticals & Biotechnology", "count": 6 },
+      { "industry": "Manufacturing & Heavy Engineering", "count": 5 },
+      { "industry": "Food Processing & Agro-tech", "count": 3 },
+      { "industry": "Chemicals & Petrochemicals", "count": 2 }
+    ],
+    "monthlyTrend": [
+      { "month": "May", "submitted": 18, "approved": 15, "rejected": 1 },
+      { "month": "Jun", "submitted": 24, "approved": 20, "rejected": 2 },
+      { "month": "Jul", "submitted": 29, "approved": 25, "rejected": 3 },
+      { "month": "Aug", "submitted": 35, "approved": 31, "rejected": 2 },
+      { "month": "Sep", "submitted": 31, "approved": 27, "rejected": 2 }
+    ]
+  },
+  "officerWorkload": [
+    {
+      "officerId": "off-001",
+      "name": "Dr. Rajesh Kadam",
+      "email": "officer@maitri.com",
+      "department": "MPCB",
+      "role": "Superintending Scrutiny Officer",
+      "activeCases": 6,
+      "completedCases": 42,
+      "avgSlaDays": 14.2,
+      "clearanceRate": 94
+    },
+    {
+      "officerId": "off-002",
+      "name": "Er. Sneha Patil",
+      "email": "sneha.patil@maitri.gov.in",
+      "department": "DISH",
+      "role": "Joint Director of Industrial Safety",
+      "activeCases": 4,
+      "completedCases": 38,
+      "avgSlaDays": 11.8,
+      "clearanceRate": 96
+    },
+    {
+      "officerId": "off-003",
+      "name": "Shri Vikram Deshmukh",
+      "email": "vikram.d@maitri.gov.in",
+      "department": "MIDC",
+      "role": "Chief Infrastructure Engineer",
+      "activeCases": 5,
+      "completedCases": 51,
+      "avgSlaDays": 16.5,
+      "clearanceRate": 91
+    },
+    {
+      "officerId": "off-004",
+      "name": "Smt. Anjali Shinde",
+      "email": "anjali.s@maitri.gov.in",
+      "department": "DMFS",
+      "role": "Divisional Fire Safety Advisor",
+      "activeCases": 3,
+      "completedCases": 29,
+      "avgSlaDays": 8.4,
+      "clearanceRate": 98
+    }
+  ]
+}

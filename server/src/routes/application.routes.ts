@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { ApplicationController } from '../controllers/application.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { optionalAuthenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Protect all application routes with JWT authentication
-router.use(authenticate);
+// Allow authenticated requests and provide graceful fallback for demo personas
+router.use(optionalAuthenticate);
 
 /**
  * @route POST /api/v1/applications

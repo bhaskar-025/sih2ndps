@@ -50,6 +50,11 @@ export interface RoadmapData {
   parallelWorkflows: ParallelWorkflowStage[];
   readinessScore: number;
   approvals: ProjectApprovalItem[];
+  timeline?: { stage: string; approvals: string[]; estimatedDays: number; canRunParallel?: boolean }[];
+  documents?: { name: string; usedFor: string[] }[];
+  schemes?: { name: string; benefit: string; eligibility: string }[];
+  complianceScore?: number;
+  summary?: string;
   generatedAt?: string;
   message?: string;
 }

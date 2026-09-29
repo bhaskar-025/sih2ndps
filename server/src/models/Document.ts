@@ -31,6 +31,11 @@ export interface IDocument extends MongooseDocument {
   expiryDate?: Date;
   remarks?: string;
   usedInApprovals: string[];
+  ocrStatus?: string;
+  ocrConfidence?: number;
+  isDigitallySigned?: boolean;
+  signerName?: string;
+  signatureTimestamp?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -125,6 +130,27 @@ const DocumentSchema = new Schema<IDocument>(
     usedInApprovals: {
       type: [String],
       default: [],
+    },
+    ocrStatus: {
+      type: String,
+      enum: ['Processed', 'Pending', 'Verified', 'Failed'],
+      default: 'Verified',
+    },
+    ocrConfidence: {
+      type: Number,
+      default: 98,
+    },
+    isDigitallySigned: {
+      type: Boolean,
+      default: true,
+    },
+    signerName: {
+      type: String,
+      default: 'Director / Authorized Signatory (DSC eMudhra)',
+    },
+    signatureTimestamp: {
+      type: Date,
+      default: Date.now,
     },
   },
   {

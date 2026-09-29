@@ -9,21 +9,30 @@ import {
 
 export const roadmapService = {
   /**
-   * POST /api/v1/projects/:id/generate-roadmap
-   * Runs the Approval Intelligence Engine to evaluate rules and persist the statutory roadmap.
+   * POST /api/v1/ai/generate-roadmap
+   * Runs the AI Approval Intelligence Engine (Gemini 2.5 Flash).
+   * If Generate is clicked again, regenerates the roadmap.
    */
   generateRoadmap: async (projectId: string): Promise<RoadmapData> => {
-    const response = await api.post<any, RoadmapResponse>(`/projects/${projectId}/generate-roadmap`);
+    const response = await api.post<any, RoadmapResponse>('/ai/generate-roadmap', {
+      projectId,
+      regenerate: true,
+    });
     return response.data;
   },
 
   /**
-   * GET /api/v1/projects/:id/roadmap
-   * Retrieves the current persisted roadmap for the project.
+   * GET /api/v1/ai/roadmap/:projectId
+   * Retrieves the cached statutory roadmap for the project.
    */
   getRoadmap: async (projectId: string): Promise<RoadmapData> => {
-    const response = await api.get<any, RoadmapResponse>(`/projects/${projectId}/roadmap`);
-    return response.data;
+    try {
+      const response = await api.get<any, RoadmapResponse>(`/ai/roadmap/${projectId}`);
+      return response.data;
+    } catch {
+      const response = await api.get<any, RoadmapResponse>(`/projects/${projectId}/roadmap`);
+      return response.data;
+    }
   },
 
   /**
@@ -37,6 +46,24 @@ export const roadmapService = {
     const response = await api.put<any, SingleApprovalResponse>(`/approvals/${approvalId}/status`, {
       status,
     });
+    return response.data;
+  },
+
+  /**
+   * POST /api/v1/ai/generate-roadmap
+   * AI Approval Intelligence Engine endpoint
+   */
+  aiGenerateRoadmap: async (projectId: string): Promise<RoadmapData> => {
+    const response = await api.post<any, RoadmapResponse>('/ai/generate-roadmap', { projectId });
+    return response.data;
+  },
+
+  /**
+   * POST /api/v1/ai/regenerate-roadmap/:projectId
+   * AI Approval Intelligence Engine regeneration endpoint
+   */
+  aiRegenerateRoadmap: async (projectId: string): Promise<RoadmapData> => {
+    const response = await api.post<any, RoadmapResponse>(`/ai/regenerate-roadmap/${projectId}`);
     return response.data;
   },
 };

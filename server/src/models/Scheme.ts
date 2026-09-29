@@ -4,11 +4,20 @@ export interface IScheme extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   code: string;
-  departmentId: mongoose.Types.ObjectId;
+  departmentId?: mongoose.Types.ObjectId;
   description: string;
   eligibilityCriteria: string[];
   financialIncentiveSummary: string;
   maxSubsidyAmount?: number;
+  subsidyPercentage?: number;
+  applicableIndustries?: string[];
+  applicableDistricts?: string[];
+  minInvestment?: number;
+  maxInvestment?: number;
+  isMsmeEligible?: boolean;
+  isWomenEntrepreneurEligible?: boolean;
+  isStartupEligible?: boolean;
+  minEmployment?: number;
   active: boolean;
   applicationDeadline?: Date;
   createdAt: Date;
@@ -34,7 +43,7 @@ const SchemeSchema = new Schema<IScheme>(
     departmentId: {
       type: Schema.Types.ObjectId,
       ref: 'Department',
-      required: [true, 'Department reference is required'],
+      required: false,
       index: true,
     },
     description: {
@@ -52,6 +61,47 @@ const SchemeSchema = new Schema<IScheme>(
     maxSubsidyAmount: {
       type: Number,
       min: 0,
+    },
+    subsidyPercentage: {
+      type: Number,
+      min: 0,
+      max: 100,
+    },
+    applicableIndustries: {
+      type: [String],
+      default: ['ALL'],
+      index: true,
+    },
+    applicableDistricts: {
+      type: [String],
+      default: ['ALL'],
+      index: true,
+    },
+    minInvestment: {
+      type: Number,
+      default: 0,
+    },
+    maxInvestment: {
+      type: Number,
+    },
+    isMsmeEligible: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    isWomenEntrepreneurEligible: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    isStartupEligible: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    minEmployment: {
+      type: Number,
+      default: 0,
     },
     active: {
       type: Boolean,

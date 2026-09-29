@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -84,6 +85,7 @@ type ProjectWizardValues = z.infer<typeof projectWizardSchema>;
 
 export const CreateProject: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -153,6 +155,10 @@ export const CreateProject: React.FC = () => {
         ...data,
         status: 'Submitted',
       });
+      // Invalidate caches so newly submitted request immediately appears in Officer Workplace & Industrial Units
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['officer-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['applications-pipeline'] });
       navigate(`/projects/${newProject._id}`);
     } catch (err: any) {
       setServerError(err.message || 'Failed to register project in MongoDB');

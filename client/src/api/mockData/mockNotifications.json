@@ -1,0 +1,52 @@
+[
+  {
+    "_id": "notif-001",
+    "title": "Fresh Application Under Scrutiny Queue",
+    "message": "Application MH-2026-MPCB-08912 for Chakan EV Mega Gigafactory has been assigned for initial scrutiny.",
+    "type": "Approval",
+    "priority": "High",
+    "read": false,
+    "timestamp": "2026-09-29T13:40:00.000Z",
+    "actionUrl": "/applications?id=app-001"
+  },
+  {
+    "_id": "notif-002",
+    "title": "Query Response Received",
+    "message": "Applicant Nitin Gadve submitted water allocation sanctions for MH-2026-MPCB-08912.",
+    "type": "Query",
+    "priority": "Medium",
+    "read": false,
+    "timestamp": "2026-09-29T12:15:00.000Z",
+    "actionUrl": "/applications?id=app-001"
+  },
+  {
+    "_id": "notif-003",
+    "title": "Field Inspection Scheduled Today",
+    "message": "Site audit scheduled for Solapur Bio-Ethanol Refining Complex at 4:00 PM today.",
+    "type": "Inspection",
+    "priority": "High",
+    "read": false,
+    "timestamp": "2026-09-29T10:00:00.000Z",
+    "actionUrl": "/inspections"
+  },
+  {
+    "_id": "notif-004",
+    "title": "Statutory SLA Warning: 3 Days Remaining",
+    "message": "Application MH-2026-DMFS-04190 is approaching mandatory 15-day SLA deadline.",
+    "type": "Reminder",
+    "priority": "Critical",
+    "read": false,
+    "timestamp": "2026-09-29T08:30:00.000Z",
+    "actionUrl": "/applications?id=app-002"
+  },
+  {
+    "_id": "notif-005",
+    "title": "Clearance NOC Generated",
+    "message": "Clearance Certificate MH-DISH-NOC-2026-00491 generated and dispatched to entrepreneur.",
+    "type": "Approval",
+    "priority": "Low",
+    "read": true,
+    "timestamp": "2026-09-29T07:15:00.000Z",
+    "actionUrl": "/applications?id=app-003"
+  }
+]

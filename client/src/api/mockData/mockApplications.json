@@ -1,0 +1,293 @@
+[
+  {
+    "_id": "app-001",
+    "applicationNumber": "MH-2026-MPCB-08912",
+    "serviceName": "Consent to Establish (CTE - Red Category)",
+    "department": "MPCB",
+    "status": "Under Scrutiny",
+    "currentStage": "Technical Scrutiny",
+    "priority": "High",
+    "riskScore": "Medium",
+    "slaRemaining": 12,
+    "isOverdue": false,
+    "escalated": false,
+    "submittedAt": "2026-09-18T10:30:00.000Z",
+    "projectId": {
+      "_id": "proj-001",
+      "projectName": "Chakan EV Mega Gigafactory",
+      "companyName": "Apex Mobility Solutions Pvt Ltd",
+      "industry": "Electric Mobility & Electronics",
+      "district": "Pune",
+      "investment": 8500000000,
+      "employment": 1400,
+      "pollutionCategory": "Red",
+      "owner": {
+        "name": "Nitin Gadve",
+        "email": "nitin@apexmobility.com",
+        "phone": "+91 98220 12345",
+        "organization": "Apex Mobility Solutions"
+      }
+    },
+    "assignedOfficer": {
+      "_id": "off-001",
+      "name": "Dr. Rajesh Kadam",
+      "email": "officer@maitri.com",
+      "department": "MPCB"
+    },
+    "documents": [
+      {
+        "name": "Environmental Impact Assessment (EIA)",
+        "documentType": "EIA Report",
+        "fileName": "EIA_Apex_Gigafactory_v2.pdf",
+        "fileUrl": "/uploads/documents/eia_report.pdf",
+        "fileSize": 14500000,
+        "verificationStatus": "Verified",
+        "ocrStatus": "Verified",
+        "ocrConfidence": 99.2,
+        "isDigitallySigned": true
+      },
+      {
+        "name": "Zero Liquid Discharge (ZLD) Blueprint",
+        "documentType": "Technical Layout",
+        "fileName": "ZLD_Layout_Approval.pdf",
+        "fileUrl": "/uploads/documents/zld_layout.pdf",
+        "fileSize": 8200000,
+        "verificationStatus": "Under Verification",
+        "ocrStatus": "Processed",
+        "ocrConfidence": 97.5,
+        "isDigitallySigned": true
+      }
+    ],
+    "queries": [
+      {
+        "_id": "q-101",
+        "queryText": "Clarify proposed daily water consumption figures and source approval from Irrigation Dept.",
+        "raisedBy": "Dr. Rajesh Kadam (MPCB)",
+        "raisedAt": "2026-09-20T14:15:00.000Z",
+        "status": "Responded",
+        "response": "Submitted sanctioned allocation letter from MIDC Water Supply Division under Letter No. 4410.",
+        "respondedAt": "2026-09-22T09:40:00.000Z"
+      }
+    ],
+    "internalNotes": [
+      {
+        "_id": "n-201",
+        "note": "Effluent treatment design complies with CPCB standards for battery cell processing. Awaiting site soil audit report.",
+        "author": "Dr. Rajesh Kadam",
+        "createdAt": "2026-09-21T11:20:00.000Z"
+      }
+    ]
+  },
+  {
+    "_id": "app-002",
+    "applicationNumber": "MH-2026-DMFS-04190",
+    "serviceName": "Final Fire Safety NOC & Building Clearance",
+    "department": "DMFS",
+    "status": "Inspection",
+    "currentStage": "Joint Field Inspection",
+    "priority": "Critical",
+    "riskScore": "High",
+    "slaRemaining": 3,
+    "isOverdue": false,
+    "escalated": true,
+    "submittedAt": "2026-09-08T09:00:00.000Z",
+    "projectId": {
+      "_id": "proj-002",
+      "projectName": "Solapur Bio-Ethanol Refining Complex",
+      "companyName": "MahaGreen Biofuels Ltd",
+      "industry": "Renewable Energy & Biofuels",
+      "district": "Solapur",
+      "investment": 3200000000,
+      "employment": 450,
+      "pollutionCategory": "Red",
+      "owner": {
+        "name": "Kailash Jagtap",
+        "email": "kailash@mahagreen.in",
+        "phone": "+91 94220 54321",
+        "organization": "MahaGreen Biofuels"
+      }
+    },
+    "assignedOfficer": {
+      "_id": "off-004",
+      "name": "Smt. Anjali Shinde",
+      "email": "anjali.s@maitri.gov.in",
+      "department": "DMFS"
+    },
+    "documents": [
+      {
+        "name": "Hydrant & Sprinkler Engineering Schematic",
+        "documentType": "Fire Engineering Drawing",
+        "fileName": "Fire_Sprinklers_Schematic.pdf",
+        "fileUrl": "/uploads/documents/fire_schematic.pdf",
+        "fileSize": 6700000,
+        "verificationStatus": "Verified",
+        "ocrStatus": "Verified",
+        "ocrConfidence": 98.8,
+        "isDigitallySigned": true
+      }
+    ],
+    "queries": [],
+    "internalNotes": [
+      {
+        "_id": "n-202",
+        "note": "Ethanol storage tanks require foam deluge system. Field inspection booked for today 2:00 PM.",
+        "author": "Smt. Anjali Shinde",
+        "createdAt": "2026-09-28T16:00:00.000Z"
+      }
+    ]
+  },
+  {
+    "_id": "app-003",
+    "applicationNumber": "MH-2026-DISH-01994",
+    "serviceName": "Factory License & Hazardous Process Approval",
+    "department": "DISH",
+    "status": "Approved",
+    "currentStage": "Clearance Granted",
+    "priority": "Medium",
+    "riskScore": "Low",
+    "slaRemaining": 21,
+    "isOverdue": false,
+    "escalated": false,
+    "certificateNumber": "MH-DISH-NOC-2026-00491",
+    "certificateIssuedAt": "2026-09-29T11:45:00.000Z",
+    "certificateRemarks": "Approved under Rule 5 of Maharashtra Factories Rules.",
+    "submittedAt": "2026-09-02T11:15:00.000Z",
+    "projectId": {
+      "_id": "proj-003",
+      "projectName": "Thane Biopharma Sterile Formulation Unit",
+      "companyName": "BioGenix Life Sciences Ltd",
+      "industry": "Pharmaceuticals & Biotechnology",
+      "district": "Thane",
+      "investment": 1400000000,
+      "employment": 320,
+      "pollutionCategory": "Orange",
+      "owner": {
+        "name": "Pooja Varma",
+        "email": "pooja.v@biogenix.com",
+        "phone": "+91 98190 87654",
+        "organization": "BioGenix Life Sciences"
+      }
+    },
+    "assignedOfficer": {
+      "_id": "off-002",
+      "name": "Er. Sneha Patil",
+      "email": "sneha.patil@maitri.gov.in",
+      "department": "DISH"
+    },
+    "documents": [],
+    "queries": [],
+    "internalNotes": []
+  },
+  {
+    "_id": "app-004",
+    "applicationNumber": "MH-2026-MIDC-07812",
+    "serviceName": "Industrial Plot Possession & Infrastructure Consent",
+    "department": "MIDC",
+    "status": "Document Verification",
+    "currentStage": "Scrutiny of Land Registry",
+    "priority": "High",
+    "riskScore": "Medium",
+    "slaRemaining": 8,
+    "isOverdue": false,
+    "escalated": false,
+    "submittedAt": "2026-09-22T14:30:00.000Z",
+    "projectId": {
+      "_id": "proj-004",
+      "projectName": "Nagpur Heavy Fabrication & Aerospace Park",
+      "companyName": "Bharat Forge Precision Ltd",
+      "industry": "Manufacturing & Heavy Engineering",
+      "district": "Nagpur",
+      "investment": 4500000000,
+      "employment": 850,
+      "pollutionCategory": "Orange",
+      "owner": {
+        "name": "Arun Kulkarni",
+        "email": "arun@bharatforge.com",
+        "phone": "+91 97650 99881",
+        "organization": "Bharat Forge Precision"
+      }
+    },
+    "assignedOfficer": {
+      "_id": "off-003",
+      "name": "Shri Vikram Deshmukh",
+      "email": "vikram.d@maitri.gov.in",
+      "department": "MIDC"
+    },
+    "documents": [],
+    "queries": [],
+    "internalNotes": []
+  },
+  {
+    "_id": "app-005",
+    "applicationNumber": "MH-2026-MPCB-09341",
+    "serviceName": "Air & Water Pollution Discharge Clearance",
+    "department": "MPCB",
+    "status": "Rejected",
+    "currentStage": "Deficiency Rejection",
+    "priority": "Medium",
+    "riskScore": "High",
+    "slaRemaining": 0,
+    "isOverdue": true,
+    "escalated": false,
+    "submittedAt": "2026-08-25T10:00:00.000Z",
+    "projectId": {
+      "_id": "proj-005",
+      "projectName": "Tarapur Synthetic Dye & Resin Complex",
+      "companyName": "ColorCraft Dyes Ltd",
+      "industry": "Chemicals & Petrochemicals",
+      "district": "Palghar",
+      "investment": 950000000,
+      "employment": 180,
+      "pollutionCategory": "Red",
+      "owner": {
+        "name": "Suresh Mehta",
+        "email": "suresh@colorcraft.com",
+        "phone": "+91 98200 44556",
+        "organization": "ColorCraft Dyes"
+      }
+    },
+    "assignedOfficer": {
+      "_id": "off-001",
+      "name": "Dr. Rajesh Kadam",
+      "email": "officer@maitri.com",
+      "department": "MPCB"
+    },
+    "documents": [],
+    "queries": [],
+    "internalNotes": []
+  },
+  {
+    "_id": "app-006",
+    "applicationNumber": "MH-2026-MSEDCL-01124",
+    "serviceName": "33kV Dedicated HT Industrial Feeder Sanction",
+    "department": "MSEDCL",
+    "status": "Submitted",
+    "currentStage": "Initial Docket Review",
+    "priority": "Low",
+    "riskScore": "Low",
+    "slaRemaining": 26,
+    "isOverdue": false,
+    "escalated": false,
+    "submittedAt": "2026-09-29T08:15:00.000Z",
+    "projectId": {
+      "_id": "proj-006",
+      "projectName": "Nashik Agro Processing & Cold Chain Terminal",
+      "companyName": "MahaFarm Fresh Agro Pvt Ltd",
+      "industry": "Food Processing & Agro-tech",
+      "district": "Nashik",
+      "investment": 680000000,
+      "employment": 220,
+      "pollutionCategory": "Green",
+      "owner": {
+        "name": "Sunil Gaikwad",
+        "email": "sunil@mahafresh.com",
+        "phone": "+91 94230 11223",
+        "organization": "MahaFarm Fresh"
+      }
+    },
+    "assignedOfficer": null,
+    "documents": [],
+    "queries": [],
+    "internalNotes": []
+  }
+]

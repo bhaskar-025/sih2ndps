@@ -1,0 +1,228 @@
+[
+  {
+    "_id": "dept-001",
+    "name": "Maharashtra Pollution Control Board",
+    "code": "MPCB",
+    "description": "Statutory body enforcing environmental standards, water & air consent orders, and hazardous waste monitoring.",
+    "jurisdiction": "State-wide Maharashtra",
+    "portalUrl": "https://mpcb.gov.in",
+    "contactEmail": "ro.pune@mpcb.gov.in",
+    "contactPhone": "020-25811694",
+    "officerCount": 18,
+    "pendingCases": 14,
+    "completedCases": 128,
+    "averageSla": 14.2,
+    "performancePercent": 94,
+    "approvalTypes": [
+      "Consent to Establish (CTE)",
+      "Consent to Operate (CTO)",
+      "Hazardous Waste Authorization",
+      "Biomedical Waste Registration"
+    ],
+    "officers": [
+      {
+        "_id": "off-001",
+        "name": "Dr. Rajesh Kadam",
+        "email": "officer@maitri.com",
+        "designation": "Superintending Scrutiny Officer",
+        "activeCases": 6
+      },
+      {
+        "_id": "off-011",
+        "name": "Dr. Sunita Deshpande",
+        "email": "sunita.d@mpcb.gov.in",
+        "designation": "Regional Scientific Officer",
+        "activeCases": 8
+      }
+    ]
+  },
+  {
+    "_id": "dept-002",
+    "name": "Directorate of Industrial Safety & Health",
+    "code": "DISH",
+    "description": "Regulates occupational health, boiler standards, hazardous chemical procedures, and factory licenses.",
+    "jurisdiction": "State-wide Maharashtra",
+    "portalUrl": "https://dish.maharashtra.gov.in",
+    "contactEmail": "jd.dish.mumbai@maharashtra.gov.in",
+    "contactPhone": "022-26572115",
+    "officerCount": 14,
+    "pendingCases": 9,
+    "completedCases": 104,
+    "averageSla": 11.8,
+    "performancePercent": 96,
+    "approvalTypes": [
+      "Factory License",
+      "Factory Plan Scrutiny",
+      "Boiler Registration & Inspection",
+      "Hazardous Process Clearance"
+    ],
+    "officers": [
+      {
+        "_id": "off-002",
+        "name": "Er. Sneha Patil",
+        "email": "sneha.patil@maitri.gov.in",
+        "designation": "Joint Director of Industrial Safety",
+        "activeCases": 4
+      }
+    ]
+  },
+  {
+    "_id": "dept-003",
+    "name": "Maharashtra Industrial Development Corporation",
+    "code": "MIDC",
+    "description": "Apex infrastructure agency managing industrial estates, water connections, plot allotments, and building permissions.",
+    "jurisdiction": "Industrial Parks & Growth Centres",
+    "portalUrl": "https://midcindia.org",
+    "contactEmail": "ce.midc@maharashtra.gov.in",
+    "contactPhone": "022-26870052",
+    "officerCount": 24,
+    "pendingCases": 12,
+    "completedCases": 182,
+    "averageSla": 16.5,
+    "performancePercent": 91,
+    "approvalTypes": [
+      "Industrial Plot Possession",
+      "Building Plan Approval",
+      "Water Supply Connection",
+      "Drainage & Effluent Discharge Line"
+    ],
+    "officers": [
+      {
+        "_id": "off-003",
+        "name": "Shri Vikram Deshmukh",
+        "email": "vikram.d@maitri.gov.in",
+        "designation": "Chief Infrastructure Engineer",
+        "activeCases": 5
+      }
+    ]
+  },
+  {
+    "_id": "dept-004",
+    "name": "Directorate of Maharashtra Fire Services",
+    "code": "DMFS",
+    "description": "State fire prevention and life safety authority issuing building fire safety NOCs and field audit clearances.",
+    "jurisdiction": "Urban & Industrial Zones",
+    "portalUrl": "https://mahafireservice.gov.in",
+    "contactEmail": "director.dmfs@maharashtra.gov.in",
+    "contactPhone": "022-26677555",
+    "officerCount": 11,
+    "pendingCases": 7,
+    "completedCases": 91,
+    "averageSla": 8.4,
+    "performancePercent": 98,
+    "approvalTypes": [
+      "Provisional Fire NOC",
+      "Final Fire Safety NOC",
+      "High-Rise & Industrial Fire Compliance"
+    ],
+    "officers": [
+      {
+        "_id": "off-004",
+        "name": "Smt. Anjali Shinde",
+        "email": "anjali.s@maitri.gov.in",
+        "designation": "Divisional Fire Safety Advisor",
+        "activeCases": 3
+      }
+    ]
+  },
+  {
+    "_id": "dept-005",
+    "name": "Maharashtra State Electricity Distribution Co Ltd",
+    "code": "MSEDCL",
+    "description": "State power utility managing HT industrial feeder sanctions, sub-station tie-ins, and tariff categorizations.",
+    "jurisdiction": "State-wide Distribution",
+    "portalUrl": "https://mahadiscom.in",
+    "contactEmail": "ce.commercial@mahadiscom.in",
+    "contactPhone": "1800-233-3435",
+    "officerCount": 16,
+    "pendingCases": 11,
+    "completedCases": 115,
+    "averageSla": 15.0,
+    "performancePercent": 92,
+    "approvalTypes": [
+      "HT Industrial Power Sanction",
+      "Dedicated Feeder Right of Way",
+      "Substation Grid Tie-in Approval"
+    ],
+    "officers": [
+      {
+        "_id": "off-005",
+        "name": "Er. Amit Gokhale",
+        "email": "amit.g@mahadiscom.in",
+        "designation": "Superintending Electrical Engineer",
+        "activeCases": 5
+      }
+    ]
+  },
+  {
+    "_id": "dept-006",
+    "name": "Office of the Labour Commissioner",
+    "code": "Labour",
+    "description": "Administers statutory labor laws, contract labor licensing, interstate migrant registrations, and welfare compliance.",
+    "jurisdiction": "State-wide Maharashtra",
+    "portalUrl": "https://mahakamgar.maharashtra.gov.in",
+    "contactEmail": "cl.mumbai@maharashtra.gov.in",
+    "contactPhone": "022-22874136",
+    "officerCount": 9,
+    "pendingCases": 5,
+    "completedCases": 84,
+    "averageSla": 7.8,
+    "performancePercent": 97,
+    "approvalTypes": [
+      "Contract Labour Registration",
+      "Inter-state Migrant Worker License",
+      "Factory Labour Welfare Compliance"
+    ],
+    "officers": [
+      {
+        "_id": "off-006",
+        "name": "Shri M. B. Kamble",
+        "email": "kamble.mb@mahakamgar.gov.in",
+        "designation": "Deputy Labour Commissioner",
+        "activeCases": 3
+      }
+    ]
+  },
+  {
+    "_id": "dept-007",
+    "name": "Urban Development Department (Town Planning)",
+    "code": "UDD",
+    "description": "Zoning regulations, master plan land-use change, non-agricultural conversion (NA), and development permissions.",
+    "jurisdiction": "Municipal & Regional Plan Areas",
+    "portalUrl": "https://urban.maharashtra.gov.in",
+    "contactEmail": "psec.ud1@maharashtra.gov.in",
+    "contactPhone": "022-22025211",
+    "officerCount": 12,
+    "pendingCases": 8,
+    "completedCases": 72,
+    "averageSla": 19.4,
+    "performancePercent": 88,
+    "approvalTypes": [
+      "Non-Agricultural (NA) Land Conversion",
+      "Zoning & Master Plan Clearance",
+      "Development Rights Transfer"
+    ],
+    "officers": []
+  },
+  {
+    "_id": "dept-008",
+    "name": "Water Resources & Irrigation Department",
+    "code": "WRD",
+    "description": "Allocation of surface and canal water quotas for industrial clusters and river basin abstraction permits.",
+    "jurisdiction": "State Water Basins & Reservoirs",
+    "portalUrl": "https://wrd.maharashtra.gov.in",
+    "contactEmail": "ce.pune.wrd@maharashtra.gov.in",
+    "contactPhone": "020-26123491",
+    "officerCount": 8,
+    "pendingCases": 4,
+    "completedCases": 61,
+    "averageSla": 18.2,
+    "performancePercent": 90,
+    "approvalTypes": [
+      "Bulk Water Supply Allocation",
+      "Canal Intake Construction Permit",
+      "River Abstraction Clearance"
+    ],
+    "officers": []
+  }
+]

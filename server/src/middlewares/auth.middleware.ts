@@ -82,6 +82,39 @@ export const authorize = (...allowedRoles: string[]) => {
   };
 };
 
+/**
+ * Optional Authentication: Attaches user if valid token present, otherwise proceeds
+ */
+export const optionalAuthenticate = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        try {
+          const decoded = verifyAccessToken(token);
+          const user = await User.findById(decoded.userId).select('+role +isActive');
+          if (user && user.isActive) {
+            req.user = {
+              userId: user._id.toString(),
+              email: user.email,
+              role: user.role.toLowerCase(),
+              name: user.name,
+              organization: user.organization,
+              department: user.department,
+            };
+          }
+        } catch {
+          // Token invalid or expired, continue without user
+        }
+      }
+    }
+    next();
+  } catch {
+    next();
+  }
+};
+
 // Aliases for compatibility
 export const authenticateJwt = authenticate;
 export const authorizeRoles = authorize;

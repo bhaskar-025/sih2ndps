@@ -4,11 +4,15 @@ export type ApplicationStatus =
   | 'Draft'
   | 'Submitted'
   | 'Under Scrutiny'
-  | 'Query Raised'
+  | 'Document Verification'
+  | 'Inspection'
   | 'Inspection Scheduled'
   | 'Inspection Completed'
+  | 'Committee'
   | 'Approved'
-  | 'Rejected';
+  | 'Rejected'
+  | 'Returned'
+  | 'Query Raised';
 
 export type ApplicationPriority = 'Normal' | 'High' | 'Urgent' | 'Critical';
 
@@ -35,6 +39,13 @@ export interface IApplicationHistory {
   timestamp: Date;
 }
 
+export interface IOfficerNote {
+  note: string;
+  officerName: string;
+  officerId?: mongoose.Types.ObjectId;
+  createdAt: Date;
+}
+
 export interface IApplication extends Document {
   _id: mongoose.Types.ObjectId;
   applicationNumber: string;
@@ -52,7 +63,15 @@ export interface IApplication extends Document {
   remarks?: string;
   queries: IApplicationQuery[];
   history: IApplicationHistory[];
+  internalNotes: IOfficerNote[];
   serviceName?: string;
+  escalated?: boolean;
+  riskScore?: number;
+  certificateNumber?: string;
+  certificateIssuedAt?: Date;
+  certificateRemarks?: string;
+  forwardedFrom?: string;
+  forwardedTo?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,11 +116,15 @@ const ApplicationSchema = new Schema<IApplication>(
         'Draft',
         'Submitted',
         'Under Scrutiny',
-        'Query Raised',
+        'Document Verification',
+        'Inspection',
         'Inspection Scheduled',
         'Inspection Completed',
+        'Committee',
         'Approved',
         'Rejected',
+        'Returned',
+        'Query Raised',
       ],
       default: 'Submitted',
       index: true,
@@ -138,6 +161,44 @@ const ApplicationSchema = new Schema<IApplication>(
       trim: true,
       default: '',
     },
+    escalated: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    riskScore: {
+      type: Number,
+      default: 15,
+      min: 0,
+      max: 100,
+    },
+    certificateNumber: {
+      type: String,
+      trim: true,
+    },
+    certificateIssuedAt: {
+      type: Date,
+    },
+    certificateRemarks: {
+      type: String,
+      trim: true,
+    },
+    forwardedFrom: {
+      type: String,
+      trim: true,
+    },
+    forwardedTo: {
+      type: String,
+      trim: true,
+    },
+    internalNotes: [
+      {
+        note: { type: String, required: true },
+        officerName: { type: String, required: true },
+        officerId: { type: Schema.Types.ObjectId, ref: 'User' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
     serviceName: {
       type: String,
       trim: true,

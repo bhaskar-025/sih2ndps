@@ -15,6 +15,11 @@ import faqRoutes from './faq.routes';
 import regulationRoutes from './regulation.routes';
 import auditRoutes from './audit.routes';
 import workflowRoutes from './workflow.routes';
+import aiRoutes from './ai.routes';
+import officerRoutes from './officer.routes';
+import reportsRoutes from './reports.routes';
+import copilotRoutes from './copilot.routes';
+import notificationRoutes from './notification.routes';
 import { getDatabaseStatus } from '../config/database';
 
 const apiV1Router = Router();
@@ -43,6 +48,7 @@ apiV1Router.use('/inspections', inspectionRoutes);
 apiV1Router.use('/schemes', schemeRoutes);
 apiV1Router.use('/compliance', complianceRoutes);
 apiV1Router.use('/analytics', analyticsRoutes);
+apiV1Router.use('/notifications', notificationRoutes);
 
 // Regulatory Knowledge Engine route groups
 apiV1Router.use('/knowledge', knowledgeRoutes);
@@ -53,5 +59,13 @@ apiV1Router.use('/regulations', regulationRoutes);
 // Audit & Workflow State Transition routes
 apiV1Router.use('/audit', auditRoutes);
 apiV1Router.use('/workflow', workflowRoutes);
+
+// AI Approval Intelligence Engine routes
+apiV1Router.use('/ai', aiRoutes);
+apiV1Router.use('/ai/copilot', copilotRoutes);
+
+// Government Officer Workspace & Reporting routes
+apiV1Router.use('/officer', officerRoutes);
+apiV1Router.use('/reports', reportsRoutes);
 
 export default apiV1Router;

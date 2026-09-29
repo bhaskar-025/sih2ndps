@@ -1,24 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationService } from '../services/notificationService';
+import { notificationApi, NotificationItem } from '../api/notification.api';
 
 export const useNotifications = () => {
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<NotificationItem[]>({
     queryKey: ['notifications'],
-    queryFn: () => notificationService.getNotifications(),
-    staleTime: 1000 * 60, // 1 min
+    queryFn: () => notificationApi.getNotifications(),
+    refetchInterval: 30000, // Real-time polling every 30 seconds
+    staleTime: 1000 * 15,
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: (id: string) => notificationService.markAsRead(id),
+    mutationFn: (id: string) => notificationApi.markAsRead(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['notifications'] });
-      const previous = queryClient.getQueryData<any[]>(['notifications']);
+      const previous = queryClient.getQueryData<NotificationItem[]>(['notifications']);
       if (previous) {
         queryClient.setQueryData(
           ['notifications'],
-          previous.map((n) => (n._id === id ? { ...n, isRead: true, read: true } : n))
+          previous.map((n) => (n._id === id ? { ...n, read: true } : n))
         );
       }
       return { previous };
@@ -34,7 +35,7 @@ export const useNotifications = () => {
   });
 
   const notifications = query.data || [];
-  const unreadCount = notifications.filter((n: any) => !n.isRead && !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return {
     notifications,

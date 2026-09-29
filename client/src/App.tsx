@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
+import { OfficerProvider } from './context/OfficerContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AuthLayout } from './layouts/AuthLayout';
@@ -22,6 +23,8 @@ import { ApprovalDetails } from './pages/roadmap/ApprovalDetails';
 import { DocumentsDashboard } from './pages/documents/DocumentsDashboard';
 import { DocumentDetails } from './pages/documents/DocumentDetails';
 import { OfficerDashboard } from './pages/officer/OfficerDashboard';
+import { InspectionsPage } from './pages/officer/InspectionsPage';
+import { DepartmentRegistryPage } from './pages/officer/DepartmentRegistryPage';
 import { LandingPage } from './pages/LandingPage';
 import { NotFound } from './pages/NotFound';
 
@@ -49,7 +52,8 @@ export const App: React.FC = () => {
         <ToastProvider>
           <AuthProvider>
             <ProjectProvider>
-              <ErrorBoundary>
+              <OfficerProvider>
+                <ErrorBoundary>
                 <BrowserRouter>
               <Routes>
                 {/* Public Landing Page */}
@@ -93,15 +97,16 @@ export const App: React.FC = () => {
                   <Route path="/applications" element={<ApplicationsList />} />
                   <Route path="/compliance" element={<ComplianceTracker />} />
                   <Route path="/schemes" element={<IncentivesSchemes />} />
-                  <Route path="/inspections" element={<DashboardOverview />} />
-                  <Route path="/departments" element={<DashboardOverview />} />
-                  <Route path="/users" element={<DashboardOverview />} />
+                  <Route path="/inspections" element={<InspectionsPage />} />
+                  <Route path="/departments" element={<DepartmentRegistryPage />} />
+                  <Route path="/users" element={<OfficerDashboard />} />
                   <Route path="*" element={<NotFound />} />
 
                 </Route>
               </Routes>
             </BrowserRouter>
               </ErrorBoundary>
+              </OfficerProvider>
             </ProjectProvider>
           </AuthProvider>
         </ToastProvider>

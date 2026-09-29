@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DocumentService } from '../services/document.service';
+import { AIComplianceService } from '../services/ai/aiCompliance.service';
 
 export class DocumentController {
   /**
@@ -39,6 +40,9 @@ export class DocumentController {
         },
         userId
       );
+
+      // Recalculate AI Compliance score on document upload
+      AIComplianceService.calculateComplianceScore(projectId).catch(() => {});
 
       res.status(201).json({
         success: true,

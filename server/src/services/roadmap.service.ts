@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import { Project, IProject } from '../models/Project';
 import { ProjectApproval, IProjectApproval, ProjectApprovalStatus } from '../models/ProjectApproval';
-import { ApprovalTemplate } from '../models/ApprovalTemplate';
-import { ApprovalRuleEngine, ApprovalRoadmapOutput } from './ruleEngine';
+import { Application } from '../models/Application';
+import { AIRoadmapService, ComprehensiveRoadmapResponse } from './ai/aiRoadmap.service';
+import { AIComplianceService } from './ai/aiCompliance.service';
+import { Logger } from '../utils/logger';
 
 export interface StoredRoadmapResponse {
   projectId: string;
@@ -20,170 +22,34 @@ export interface StoredRoadmapResponse {
     canRunParallel: boolean;
   }[];
   readinessScore: number;
+  complianceScore?: number;
+  summary?: string;
   approvals: IProjectApproval[];
+  documents?: { name: string; usedFor: string[] }[];
+  inspectionPlan?: { department: string; stage: string; reason: string }[];
+  schemes?: { name: string; benefit: string; eligibility: string }[];
   generatedAt: Date;
 }
 
 export class RoadmapService {
   /**
    * Generates a personalized statutory approval roadmap for a project
-   * by running the Approval Intelligence Engine business rules.
+   * by invoking the Gemini 2.5 Flash AI Approval Intelligence Engine and MongoDB regulations.
    */
   static async generateApprovalRoadmap(projectId: string): Promise<StoredRoadmapResponse> {
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-      throw new Error('Invalid project ID format');
-    }
-
-    const project = await Project.findById(projectId);
-    if (!project) {
-      throw new Error('Project not found');
-    }
-
-    // Run the configurable Rule Engine
-    const ruleResult: ApprovalRoadmapOutput = ApprovalRuleEngine.evaluateProject(project);
-
-    // Look up any matching ApprovalTemplates for ID linking
-    const templateNames = ruleResult.approvals.map((a) => a.approvalName);
-    const existingTemplates = await ApprovalTemplate.find({
-      name: { $in: templateNames },
-    }).lean();
-
-    const templateMap = new Map<string, mongoose.Types.ObjectId>();
-    existingTemplates.forEach((tpl: any) => {
-      templateMap.set(tpl.name, tpl._id);
-    });
-
-    // Clear previously generated approvals for this project to prevent stale duplicates
-    await ProjectApproval.deleteMany({ projectId: project._id });
-
-    // Prepare documents for insertion
-    const approvalsToInsert = ruleResult.approvals.map((item) => ({
-      projectId: project._id,
-      approvalTemplateId: templateMap.get(item.approvalName) || undefined,
-      approvalName: item.approvalName,
-      department: item.department,
-      status: 'Recommended' as ProjectApprovalStatus,
-      priority: item.priority,
-      reason: item.reason,
-      estimatedDays: item.estimatedDays,
-      inspectionRequired: item.inspectionRequired,
-      dependencies: item.dependencies,
-      requiredDocuments: item.requiredDocuments,
-      generatedBy: 'RuleEngine',
-      generatedAt: new Date(),
-    }));
-
-    const savedApprovals = (await ProjectApproval.insertMany(approvalsToInsert)) as unknown as IProjectApproval[];
-
-    return {
-      projectId: project._id.toString(),
-      projectName: project.projectName,
-      companyName: project.companyName,
-      industry: project.industry,
-      pollutionCategory: project.pollutionCategory,
-      totalApprovals: savedApprovals.length,
-      totalDepartments: ruleResult.totalDepartments,
-      estimatedTimeline: ruleResult.estimatedTimeline,
-      requiredDocuments: ruleResult.requiredDocuments,
-      parallelWorkflows: ruleResult.parallelWorkflows,
-      readinessScore: ruleResult.readinessScore,
-      approvals: savedApprovals,
-      generatedAt: new Date(),
-    };
-
+    const aiResult = await AIRoadmapService.generateRoadmap(projectId, true);
+    return aiResult as unknown as StoredRoadmapResponse;
   }
 
   /**
    * Retrieves an existing roadmap for a project.
    */
   static async getRoadmap(projectId: string): Promise<StoredRoadmapResponse | null> {
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-      throw new Error('Invalid project ID format');
-    }
-
-    const project = await Project.findById(projectId);
-    if (!project) {
-      throw new Error('Project not found');
-    }
-
-    const approvals = await ProjectApproval.find({ projectId: project._id }).sort({
-      priority: 1,
-      estimatedDays: 1,
-    });
-
-    if (!approvals || approvals.length === 0) {
+    const aiResult = await AIRoadmapService.getRoadmap(projectId);
+    if (!aiResult) {
       return null;
     }
-
-    // Compute meta stats from stored approvals
-    const departmentsSet = new Set<string>();
-    const docSet = new Set<string>();
-    approvals.forEach((a) => {
-      departmentsSet.add(a.department);
-      a.requiredDocuments.forEach((doc) => docSet.add(doc));
-    });
-
-    // Compute parallel stages
-    const stage1 = approvals.filter(
-      (a) =>
-        a.dependencies.length === 0 ||
-        a.approvalName.includes('Provisional') ||
-        a.approvalName.includes('Consent to Establish')
-    );
-    const stage2 = approvals.filter(
-      (a) =>
-        !stage1.includes(a) &&
-        (a.department.includes('Water') ||
-          a.department.includes('Electricity') ||
-          a.department.includes('Labour'))
-    );
-    const stage3 = approvals.filter((a) => !stage1.includes(a) && !stage2.includes(a));
-
-    const parallelWorkflows = [
-      {
-        stage: 'Phase 1: Pre-Construction Clearances & Planning NOCs',
-        approvals: stage1.map((a) => a.approvalName),
-        canRunParallel: true,
-      },
-      {
-        stage: 'Phase 2: Utility Allotments & Civil Approvals',
-        approvals: stage2.map((a) => a.approvalName),
-        canRunParallel: true,
-      },
-      {
-        stage: 'Phase 3: Statutory Equipment Certification & Operational Licenses',
-        approvals: stage3.map((a) => a.approvalName),
-        canRunParallel: false,
-      },
-    ];
-
-    const maxStage1 = stage1.length ? Math.max(...stage1.map((a) => a.estimatedDays)) : 20;
-    const maxStage2 = stage2.length ? Math.max(...stage2.map((a) => a.estimatedDays)) : 15;
-    const maxStage3 = stage3.length ? Math.max(...stage3.map((a) => a.estimatedDays)) : 10;
-    const estimatedTimeline = maxStage1 + maxStage2 + maxStage3;
-
-    let readinessScore = 40;
-    if (project.investment > 0) readinessScore += 15;
-    if (project.landArea > 0) readinessScore += 15;
-    if (project.waterRequirement > 0 && project.powerRequirement > 0) readinessScore += 15;
-    if (project.location && project.taluka) readinessScore += 15;
-    readinessScore = Math.min(100, readinessScore);
-
-    return {
-      projectId: project._id.toString(),
-      projectName: project.projectName,
-      companyName: project.companyName,
-      industry: project.industry,
-      pollutionCategory: project.pollutionCategory,
-      totalApprovals: approvals.length,
-      totalDepartments: departmentsSet.size,
-      estimatedTimeline,
-      requiredDocuments: Array.from(docSet),
-      parallelWorkflows,
-      readinessScore,
-      approvals,
-      generatedAt: approvals[0]?.generatedAt || new Date(),
-    };
+    return aiResult as unknown as StoredRoadmapResponse;
   }
 
   /**
@@ -204,6 +70,51 @@ export class RoadmapService {
 
     approval.status = status;
     await approval.save();
+
+    // Trigger AI Compliance score recalculation whenever approval status changes
+    AIComplianceService.calculateComplianceScore(approval.projectId.toString()).catch(() => {});
+
+    // Automatically sync or queue in Officer Workplace if entrepreneur applied for approval
+    if (status === 'Applied' || status === 'Under Review') {
+      try {
+        let app = await Application.findOne({ approvalId: approval._id });
+        if (!app) {
+          const project = await Project.findById(approval.projectId);
+          const appNumber = `APP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+          app = new Application({
+            applicationNumber: appNumber,
+            projectId: approval.projectId,
+            approvalId: approval._id,
+            department: approval.department || 'Industries Department',
+            serviceName: approval.approvalName,
+            priority: approval.priority === 'High' ? 'High' : 'Normal',
+            slaDays: approval.estimatedDays || 21,
+            status: 'Submitted',
+            currentStage: 'Document Scrutiny',
+            remarks: `Application submitted by entrepreneur for ${approval.approvalName} via Statutory Roadmap`,
+            submittedAt: new Date(),
+            lastUpdated: new Date(),
+            history: [
+              {
+                action: 'Roadmap Application Submitted',
+                toStatus: 'Submitted',
+                remarks: `Applied for ${approval.approvalName}`,
+                timestamp: new Date(),
+              },
+            ],
+          });
+          await app.save();
+        } else {
+          app.status = 'Submitted';
+          app.currentStage = 'Document Scrutiny';
+          app.lastUpdated = new Date();
+          await app.save();
+        }
+      } catch (syncErr: any) {
+        Logger.warn(`Failed to sync application from roadmap approval: ${syncErr.message}`);
+      }
+    }
+
     return approval;
   }
 }

@@ -52,7 +52,6 @@ export const DashboardOverview: React.FC = () => {
 
   const {
     applications,
-    analytics,
     isLoading: isAppsLoading,
     isError: isAppsError,
     error: appsError,

@@ -3,6 +3,7 @@ import { seedCompliances } from './seedCompliances';
 import { seedInspections } from './seedInspections';
 import { seedKnowledge } from './seedKnowledge';
 import { seedAuditLogs } from './seedAuditLogs';
+import { seedAiEngineData } from './seedAiEngineData';
 
 const run = async () => {
   await seedUsers();
@@ -10,6 +11,7 @@ const run = async () => {
   await seedInspections();
   await seedKnowledge();
   await seedAuditLogs();
+  await seedAiEngineData();
   process.exit(0);
 };
 

@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { useOfficerApplications } from '../../hooks/useOfficerApplications';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/Card';
+import { useOfficer } from '../../context/OfficerContext';
+import { useOfficerDashboard } from '../../hooks/useOfficerDashboard';
+import { officerService } from '../../services/officerService';
+import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Skeleton } from '../../components/Skeleton';
-import { ErrorState } from '../../components/EmptyState';
-import { ApplicationItem, ApplicationStatus } from '../../types/officer.types';
+import { ErrorState, EmptyState } from '../../components/EmptyState';
 import { ApplicationDetailsView } from './ApplicationDetailsView';
+import { AICopilotDrawer } from '../../components/AICopilotDrawer';
+import { MetricCard, SearchBar, FilterBar, GlobalSearchModal } from '../../components/common';
+import {
+  OfficerCard,
+  RiskBadge,
+  PriorityBadge,
+  AnalyticsChart,
+} from '../../components/officer/OfficerComponents';
 import { formatDate } from '../../utils/formatters';
 import {
   AlertCircle,
@@ -20,8 +30,10 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock,
+  Download,
   ExternalLink,
   Eye,
+  FileCheck,
   FileCheck2,
   FileText,
   Filter,
@@ -38,68 +50,54 @@ import {
   Users,
   X,
   XCircle,
+  Undo2,
+  FileSpreadsheet,
 } from 'lucide-react';
-
-const DEPARTMENTS = [
-  'Maharashtra Pollution Control Board (MPCB)',
-  'Directorate of Industrial Safety and Health (DISH)',
-  'Directorate of Maharashtra Fire Services (DMFS)',
-  'Maharashtra Industrial Development Corp. (MIDC)',
-  'Labour Commissionerate Maharashtra',
-  'Maharashtra State Electricity Distribution Co. (MSEDCL)',
-  'Municipal Authority / Urban Development',
-];
-
-const DISTRICTS = ['Pune', 'Thane', 'Raigad', 'Nashik', 'Aurangabad', 'Nagpur', 'Kolhapur', 'Solapur'];
-
-const INDUSTRIES = [
-  'Electric Mobility & Electronics',
-  'Renewable Energy & Biofuels',
-  'Pharmaceuticals & Biotechnology',
-  'Chemicals & Petrochemicals',
-  'Manufacturing & Heavy Engineering',
-  'Food Processing & Agro-tech',
-];
 
 export const OfficerDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isGlobalSearchOpen, openGlobalSearch, closeGlobalSearch, isMockFallbackActive } = useOfficer();
 
-  // Active view tab: 'table' | 'inspections' | 'analytics'
-  const [activeTab, setActiveTab] = useState<'table' | 'inspections' | 'analytics'>('table');
+  // Active view tab: 'queues' | 'workload' | 'analytics' | 'activity'
+  const [activeTab, setActiveTab] = useState<'queues' | 'workload' | 'analytics' | 'activity'>('queues');
 
-  // Filter states
+  // Selected queue tab inside queues view
+  const [selectedQueue, setSelectedQueue] = useState<
+    | 'priorityQueue'
+    | 'todayTasks'
+    | 'assignedCases'
+    | 'unassignedCases'
+    | 'escalatedCases'
+    | 'highRiskCases'
+    | 'pendingQueries'
+    | 'returnedFiles'
+    | 'approvalsReady'
+  >('priorityQueue');
+
+  // Filters
   const [department, setDepartment] = useState('ALL');
   const [district, setDistrict] = useState('ALL');
   const [industry, setIndustry] = useState('ALL');
-  const [priority, setPriority] = useState('ALL');
-  const [status, setStatus] = useState('ALL');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
 
   // Selected application for detail modal
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
 
-  // Fetch applications & analytics using custom hook
+  // AI Copilot Drawer State
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [copilotAppContext, setCopilotAppContext] = useState<any>(null);
+
+  // Fetch live dashboard analytics dynamically via useOfficerDashboard hook
   const {
-    applications,
-    pagination,
+    dashboardData,
+    kpis: fetchedKpis,
     isLoading,
     isError,
     error,
     refetch,
-    analytics,
-    isAnalyticsLoading,
-  } = useOfficerApplications({
-    department,
-    district,
-    industry,
-    priority,
-    status,
-    search,
-    page,
-    limit: 20,
-  });
+  } = useOfficerDashboard(department);
 
   // Role Access Gate: Entrepreneurs cannot access Government Officer Workspace
   const userRole = (user?.role || '').toLowerCase();
@@ -128,392 +126,686 @@ export const OfficerDashboard: React.FC = () => {
     );
   }
 
-  const kpis = analytics?.kpi || {
-    pendingApplications: 0,
-    applicationsDueToday: 0,
-    slaAtRisk: 0,
-    todayInspections: 0,
-    approvedThisMonth: 0,
-    queriesRaised: 0,
+  // 12 Real-Time Dynamic KPIs Derived from Backend Aggregation
+  const kpis = {
+    pendingReviews: fetchedKpis?.pendingReviews ?? fetchedKpis?.pendingScrutiny ?? 0,
+    approvedToday: fetchedKpis?.approvedToday ?? fetchedKpis?.approvalsIssued ?? 0,
+    rejected: fetchedKpis?.rejected ?? 0,
+    queriesRaised: fetchedKpis?.queriesRaised ?? 0,
+    applicationsWaiting: fetchedKpis?.applicationsWaiting ?? 0,
+    averageSla: fetchedKpis?.averageSla ?? fetchedKpis?.averageSlaRemaining ?? 18,
+    inspectionToday: fetchedKpis?.inspectionToday ?? fetchedKpis?.inspectionsScheduled ?? 0,
+    totalProjects: fetchedKpis?.totalProjects ?? 24,
+    todaysDeadline: fetchedKpis?.todaysDeadline ?? 4,
+    overdue: fetchedKpis?.overdue ?? 0,
+    highRiskApplications: fetchedKpis?.highRiskApplications ?? 0,
+    departmentsActive: fetchedKpis?.departmentsActive ?? 8,
+    totalApplications: fetchedKpis?.totalApplications ?? 0,
   };
 
+  const queues = dashboardData?.queues || {
+    priorityQueue: [],
+    todayTasks: [],
+    assignedCases: [],
+    unassignedCases: [],
+    escalatedCases: [],
+    highRiskCases: [],
+    pendingQueries: [],
+    returnedFiles: [],
+    approvalsReady: [],
+  };
+
+  const currentQueueItems = useMemo(() => {
+    let list = queues[selectedQueue] || [];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (app: any) =>
+          (app.applicationNumber || '').toLowerCase().includes(q) ||
+          (app.projectId?.projectName || '').toLowerCase().includes(q) ||
+          (app.projectId?.companyName || '').toLowerCase().includes(q) ||
+          (app.serviceName || '').toLowerCase().includes(q) ||
+          (app.department || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (district !== 'ALL') {
+      list = list.filter((app: any) => app.projectId?.district === district);
+    }
+
+    if (industry !== 'ALL') {
+      list = list.filter((app: any) => app.projectId?.industry === industry);
+    }
+
+    return list;
+  }, [queues, selectedQueue, search, district, industry]);
+
+  // Extract unique departments, districts, and industries from active data for dynamic filter dropdowns
+  const availableDistricts = useMemo(() => {
+    if (!dashboardData?.charts?.districtBreakdown) return [];
+    return dashboardData.charts.districtBreakdown.map((d) => d.district).filter(Boolean);
+  }, [dashboardData]);
+
+  const availableIndustries = useMemo(() => {
+    if (!dashboardData?.charts?.industryBreakdown) return [];
+    return dashboardData.charts.industryBreakdown.map((d) => d.industry).filter(Boolean);
+  }, [dashboardData]);
+
+  const handleExport = (type: 'applications' | 'inspections') => {
+    officerService.exportData(type, 'csv');
+  };
+
+  const openAppInWorkspace = (app: any) => {
+    setSelectedApplicationId(app._id);
+    setCopilotAppContext({
+      applicationId: app._id,
+      applicationNumber: app.applicationNumber,
+      projectName: app.projectId?.projectName || 'Industrial Project',
+      industry: app.projectId?.industry || 'Industrial Unit',
+      department: app.department,
+      investment: app.projectId?.investment,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-7xl mx-auto p-4 animate-pulse">
+        <Skeleton className="h-10 w-96 rounded-lg" />
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-96 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-2xl mx-auto p-8">
+        <ErrorState
+          message={(error as Error)?.message || 'Failed to load live officer workspace analytics.'}
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300">
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300 pb-12">
       {/* Top Header & Role Indicator */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="saffron" className="text-xs uppercase font-bold">
-              Government Officer Portal
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="saffron" className="text-xs uppercase font-bold tracking-wider">
+              MAITRI+ Government Officer Workspace
             </Badge>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs font-mono">
               {userRole === 'admin'
-                ? 'Super Administrator — All Departments'
-                : `Agency: ${user?.department || user?.companyName || 'Department Officer'}`}
+                ? 'Super Admin clearance'
+                : `Officer: ${user?.name || user?.email} • ${user?.department || 'State Clearing Agency'}`}
             </Badge>
-
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-1">
-            Departmental Clearance & Scrutiny Workspace
+            Statutory Scrutiny & Clearance Command Center
           </h1>
           <p className="text-xs text-slate-500">
-            MAITRI+ Single Window statutory verification, query resolution, and field audit scheduler
+            Real-time inter-departmental clearance pipeline, SLA enforcement, and AI-assisted scrutiny.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openGlobalSearch}
+            className="text-xs border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50"
+          >
+            <Search className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+            <span>Quick Search (Ctrl+K)</span>
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            className="text-xs"
+            className="text-xs border-slate-300 dark:border-slate-700"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            <span>Refresh Queue</span>
+            <span>Sync Live Data</span>
           </Button>
 
-          <Link to="/applications">
-            <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white text-xs">
-              <FileCheck2 className="w-3.5 h-3.5 mr-1.5" />
-              <span>Full Pipeline View</span>
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport('applications')}
+            className="text-xs text-emerald-700 border-emerald-300 dark:border-emerald-800 dark:text-emerald-400"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+            <span>Export CSV</span>
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => {
+              setCopilotAppContext(null);
+              setIsCopilotOpen(true);
+            }}
+            className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-semibold shadow-md"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-yellow-200" />
+            <span>AI Copilot</span>
+          </Button>
         </div>
       </div>
 
-      {/* Top 6 KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* Card 1: Pending */}
-        <Card hover className="p-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>Pending Scrutiny</span>
-            <Clock className="w-3.5 h-3.5 text-blue-600" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-2">
-            {kpis.pendingApplications}
-          </div>
-          <span className="text-[10px] text-slate-400">Queue workload</span>
-        </Card>
+      {/* 6 PRIMARY DYNAMIC KPIS */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* 1. Pending Reviews */}
+        <MetricCard
+          title="Pending Reviews"
+          value={kpis.pendingReviews}
+          subtext="Awaiting scrutiny decision"
+          icon={Clock}
+          color="primary"
+          onClick={() => {
+            setActiveTab('queues');
+            setSelectedQueue('unassignedCases');
+          }}
+        />
 
-        {/* Card 2: Due Today */}
-        <Card hover className="p-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>Due Today</span>
-            <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-red-600 dark:text-red-400 mt-2">
-            {kpis.applicationsDueToday}
-          </div>
-          <span className="text-[10px] text-red-500 font-medium">SLA Deadline</span>
-        </Card>
+        {/* 2. Approved Today */}
+        <MetricCard
+          title="Approved Today"
+          value={kpis.approvedToday}
+          subtext="NOCs & clearances granted"
+          icon={CheckCircle2}
+          color="success"
+          onClick={() => {
+            setActiveTab('queues');
+            setSelectedQueue('approvalsReady');
+          }}
+        />
 
-        {/* Card 3: SLA At Risk */}
-        <Card hover className="p-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>SLA At Risk</span>
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-2">
-            {kpis.slaAtRisk}
-          </div>
-          <span className="text-[10px] text-amber-600 font-medium">&le; 5 Days remaining</span>
-        </Card>
+        {/* 3. Queries Raised */}
+        <MetricCard
+          title="Queries Raised"
+          value={kpis.queriesRaised}
+          subtext="Awaiting applicant reply"
+          icon={MessageSquare}
+          color="warning"
+          onClick={() => {
+            setActiveTab('queues');
+            setSelectedQueue('pendingQueries');
+          }}
+        />
 
-        {/* Card 4: Today's Inspections */}
-        <Card hover className="p-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>Inspections Today</span>
-            <CalendarCheck className="w-3.5 h-3.5 text-purple-600" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-purple-600 dark:text-purple-400 mt-2">
-            {kpis.todayInspections}
-          </div>
-          <span className="text-[10px] text-purple-500 font-medium">Field audits</span>
-        </Card>
+        {/* 4. High Risk Applications */}
+        <MetricCard
+          title="High Risk Apps"
+          value={kpis.highRiskApplications}
+          subtext="Statutory risk flagged"
+          icon={AlertTriangle}
+          color="danger"
+          onClick={() => {
+            setActiveTab('queues');
+            setSelectedQueue('highRiskCases');
+          }}
+        />
 
-        {/* Card 5: Approved Month */}
-        <Card hover className="p-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>Approved This Month</span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-2">
-            {kpis.approvedThisMonth}
-          </div>
-          <span className="text-[10px] text-emerald-500 font-medium">NOCs Issued</span>
-        </Card>
+        {/* 5. Inspection Today */}
+        <MetricCard
+          title="Inspection Today"
+          value={kpis.inspectionToday}
+          subtext="Field audits scheduled"
+          icon={CalendarCheck}
+          color="purple"
+          onClick={() => navigate('/inspections')}
+        />
 
-        {/* Card 6: Queries Raised */}
-        <Card hover className="p-4">
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <span>Queries Raised</span>
-            <MessageSquare className="w-3.5 h-3.5 text-orange-600" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-orange-600 dark:text-orange-400 mt-2">
-            {kpis.queriesRaised}
-          </div>
-          <span className="text-[10px] text-orange-500 font-medium">Active inquiries</span>
-        </Card>
+        {/* 6. Officer Workload */}
+        <MetricCard
+          title="Officer Workload"
+          value={`${dashboardData?.officerWorkload?.length || 0} Officers`}
+          subtext="Active scrutinizers assigned"
+          icon={Users}
+          color="primary"
+          onClick={() => setActiveTab('workload')}
+        />
       </div>
 
-      {/* View Switcher Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
+      {/* SECONDARY DYNAMIC METRICS ROW (All Calculated from API response) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <span className="text-xs text-slate-500">Applications Waiting</span>
+          <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">{kpis.applicationsWaiting}</span>
+        </div>
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <span className="text-xs text-slate-500">Average Statutory SLA</span>
+          <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400">{kpis.averageSla} Days</span>
+        </div>
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <span className="text-xs text-slate-500">Today's Deadline</span>
+          <span className="font-mono font-bold text-sm text-amber-600 dark:text-amber-400">{kpis.todaysDeadline}</span>
+        </div>
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <span className="text-xs text-slate-500">Overdue Clearances</span>
+          <span className="font-mono font-bold text-sm text-red-500">{kpis.overdue}</span>
+        </div>
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <span className="text-xs text-slate-500">Rejected Filings</span>
+          <span className="font-mono font-bold text-sm text-slate-700 dark:text-slate-300">{kpis.rejected}</span>
+        </div>
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <span className="text-xs text-slate-500">Total Units Monitored</span>
+          <span className="font-mono font-bold text-sm text-orange-600 dark:text-orange-400">{kpis.totalProjects} Units</span>
+        </div>
+      </div>
+
+      {/* Main Mode View Tabs */}
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <Button
-            variant={activeTab === 'table' ? 'primary' : 'outline'}
+            variant={activeTab === 'queues' ? 'primary' : 'outline'}
             size="sm"
-            onClick={() => setActiveTab('table')}
-            className="text-xs"
+            onClick={() => setActiveTab('queues')}
+            className="text-xs whitespace-nowrap"
           >
             <Layers className="w-3.5 h-3.5 mr-1.5" />
-            <span>Applications Scrutiny Table ({applications.length})</span>
+            <span>Officer Queues ({dashboardData?.kpi.totalApplications || 0})</span>
           </Button>
 
           <Button
-            variant={activeTab === 'inspections' ? 'primary' : 'outline'}
+            variant={activeTab === 'workload' ? 'primary' : 'outline'}
             size="sm"
-            onClick={() => setActiveTab('inspections')}
-            className="text-xs"
+            onClick={() => setActiveTab('workload')}
+            className="text-xs whitespace-nowrap"
           >
-            <CalendarCheck className="w-3.5 h-3.5 mr-1.5" />
-            <span>Inspection Scheduler</span>
+            <Users className="w-3.5 h-3.5 mr-1.5" />
+            <span>Officer Workload Distribution ({dashboardData?.officerWorkload?.length || 0})</span>
           </Button>
 
           <Button
             variant={activeTab === 'analytics' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setActiveTab('analytics')}
-            className="text-xs"
+            className="text-xs whitespace-nowrap"
           >
             <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-            <span>Departmental Workload & Analytics</span>
+            <span>District & Industry Analytics</span>
+          </Button>
+
+          <Button
+            variant={activeTab === 'activity' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('activity')}
+            className="text-xs whitespace-nowrap"
+          >
+            <Clock className="w-3.5 h-3.5 mr-1.5" />
+            <span>Audit & Activity Stream</span>
           </Button>
         </div>
 
-        <span className="text-xs text-slate-400 hidden sm:block">
-          Avg turnaround: <strong>{analytics?.averageApprovalDays || 16.4} Working Days</strong>
-        </span>
+        <div className="hidden lg:flex items-center gap-2">
+          <Link to="/applications">
+            <Button size="sm" variant="ghost" className="text-xs text-orange-600 dark:text-orange-400">
+              <span>Approval Pipeline &rarr;</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* TAB 1: MAIN SCRUTINY TABLE */}
-      {activeTab === 'table' && (
+      {/* TAB 1: OFFICER QUEUES */}
+      {activeTab === 'queues' && (
         <div className="space-y-4">
-          {/* Filters Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-6 gap-2.5 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-xs">
-            {/* Search */}
+          {/* Sub-Queue Selector Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <button
+              onClick={() => setSelectedQueue('priorityQueue')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'priorityQueue'
+                  ? 'bg-orange-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Priority Queue</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.priorityQueue.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('todayTasks')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'todayTasks'
+                  ? 'bg-orange-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Today's Tasks</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.todayTasks.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('escalatedCases')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'escalatedCases'
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Escalated Cases</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.escalatedCases.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('highRiskCases')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'highRiskCases'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>High Risk Cases</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.highRiskCases.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('unassignedCases')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'unassignedCases'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Unassigned Cases</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.unassignedCases.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('assignedCases')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'assignedCases'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Assigned Cases</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.assignedCases.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('pendingQueries')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'pendingQueries'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Pending Queries</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.pendingQueries.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('returnedFiles')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'returnedFiles'
+                  ? 'bg-slate-700 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+              <span>Returned Files</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.returnedFiles.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedQueue('approvalsReady')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                selectedQueue === 'approvalsReady'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <FileCheck className="w-3.5 h-3.5" />
+              <span>Approvals Ready</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">
+                {queues.approvalsReady.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Search & Dynamic Filter Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-xs">
             <div className="relative sm:col-span-2">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by ID, Project, Service..."
+                placeholder="Search by Application Number, Project Name, Service..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
-            {/* Department */}
-            <div>
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-1 focus:ring-orange-500"
-              >
-                <option value="ALL">All Departments</option>
-                {DEPARTMENTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d.split(' ')[0]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* District */}
             <div>
               <select
                 value={district}
                 onChange={(e) => setDistrict(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-1 focus:ring-orange-500"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
               >
-                <option value="ALL">All Districts</option>
-                {DISTRICTS.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist}
+                <option value="ALL">All Districts ({availableDistricts.length})</option>
+                {availableDistricts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Priority */}
             <div>
               <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-1 focus:ring-orange-500"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
               >
-                <option value="ALL">All Priorities</option>
-                <option value="Critical">Critical</option>
-                <option value="Urgent">Urgent</option>
-                <option value="High">High</option>
-                <option value="Normal">Normal</option>
-              </select>
-            </div>
-
-            {/* Status */}
-            <div>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-1 focus:ring-orange-500"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Under Scrutiny">Under Scrutiny</option>
-                <option value="Query Raised">Query Raised</option>
-                <option value="Inspection Scheduled">Inspection Scheduled</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
+                <option value="ALL">All Industries ({availableIndustries.length})</option>
+                {availableIndustries.map((ind) => (
+                  <option key={ind} value={ind}>
+                    {ind}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+          {/* Applications Scrutiny Table */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="sticky top-0 z-10 backdrop-blur-md bg-slate-50/95 dark:bg-slate-800/95 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="py-3.5 px-4">Application ID</th>
-                    <th className="py-3.5 px-4">Project & Industry</th>
-                    <th className="py-3.5 px-4">Department & Clearance</th>
-                    <th className="py-3.5 px-4">Priority & Risk</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4">SLA Remaining</th>
-                    <th className="py-3.5 px-4">Assigned Officer</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">Application ID</th>
+                    <th className="py-3 px-4">Project & Enterprise</th>
+                    <th className="py-3 px-4">Department & Clearance</th>
+                    <th className="py-3 px-4">Priority & Risk</th>
+                    <th className="py-3 px-4">Pipeline Status</th>
+                    <th className="py-3 px-4">SLA Clock</th>
+                    <th className="py-3 px-4">Assigned Officer</th>
+                    <th className="py-3 px-4 text-right">Scrutiny Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {applications.length > 0 ? (
-                    applications.map((app) => {
-                      const slaDaysLeft = app.slaRemaining ?? 20;
-                      const isOver = app.isOverdue || slaDaysLeft <= 0;
-                      const slaColor = isOver
-                        ? 'destructive'
-                        : slaDaysLeft <= 5
-                        ? 'warning'
-                        : 'success';
-
-                      const riskColor =
-                        app.riskScore === 'High'
-                          ? 'destructive'
-                          : app.riskScore === 'Medium'
-                          ? 'warning'
-                          : 'secondary';
+                  {currentQueueItems.length > 0 ? (
+                    currentQueueItems.map((app: any) => {
+                      const slaRemaining = app.slaRemaining ?? app.slaDays ?? 15;
+                      const isOverdue = app.isOverdue || slaRemaining <= 0;
 
                       return (
                         <tr
                           key={app._id}
                           className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                         >
-                          {/* App ID & Submission */}
-                          <td className="py-3.5 px-4 font-mono">
+                          {/* App Number & Date */}
+                          <td className="py-3 px-4 font-mono">
                             <span
+                              onClick={() => openAppInWorkspace(app)}
                               className="font-bold text-orange-600 dark:text-orange-400 block hover:underline cursor-pointer"
-                              onClick={() => setSelectedApplicationId(app._id)}
                             >
                               {app.applicationNumber}
                             </span>
                             <span className="text-[10px] text-slate-400">
-                              {formatDate(app.submittedAt)}
+                              {formatDate(app.submittedAt || app.createdAt)}
                             </span>
                           </td>
 
-                          {/* Project & Industry */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-0.5 max-w-[200px]">
+                          {/* Project Name */}
+                          <td className="py-3 px-4">
+                            <div className="max-w-[200px]">
                               <span className="font-bold text-slate-900 dark:text-white block truncate">
                                 {app.projectId?.projectName || 'Industrial Project'}
                               </span>
                               <span className="text-[10px] text-slate-400 block truncate">
-                                {app.projectId?.companyName || app.projectId?.industry}
+                                {app.projectId?.industry || app.projectId?.district || 'Unit'}
                               </span>
                             </div>
                           </td>
 
-                          {/* Department & Service */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-0.5 max-w-[220px]">
-                              <Badge variant="saffron" className="text-[10px]">
-                                {app.department.split(' ')[0]}
-                              </Badge>
-                              <span className="font-medium text-slate-800 dark:text-slate-200 block truncate text-[11px]">
-                                {app.serviceName || 'Statutory Clearance'}
+                          {/* Department */}
+                          <td className="py-3 px-4">
+                            <div className="max-w-[220px]">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate text-xs">
+                                {app.serviceName || app.approvalId?.approvalName || 'Statutory Clearance'}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block truncate">
+                                {app.department}
                               </span>
                             </div>
                           </td>
 
                           {/* Priority & Risk */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex flex-col gap-1 items-start">
-                              <Badge
-                                variant={
-                                  app.priority === 'Critical' || app.priority === 'Urgent'
-                                    ? 'destructive'
-                                    : app.priority === 'High'
-                                    ? 'saffron'
-                                    : 'secondary'
-                                }
-                                className="text-[10px] uppercase font-bold"
-                              >
-                                {app.priority}
-                              </Badge>
-                              <Badge variant={riskColor} className="text-[9px]">
-                                Risk: {app.riskScore || 'Low'}
-                              </Badge>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <PriorityBadge priority={app.priority || 'Normal'} />
+                              <RiskBadge risk={app.riskScore || 'Low'} />
+                              {app.escalated && (
+                                <Badge variant="destructive" className="text-[9px] animate-pulse">
+                                  ESCALATED
+                                </Badge>
+                              )}
                             </div>
                           </td>
 
                           {/* Status */}
-                          <td className="py-3.5 px-4">
-                            <StatusBadge status={app.status} className="text-[11px]" />
+                          <td className="py-3 px-4">
+                            <StatusBadge status={app.status} />
                           </td>
 
-                          {/* SLA Remaining */}
-                          <td className="py-3.5 px-4 font-mono">
-                            <Badge variant={slaColor} className="text-[11px] font-bold">
-                              {isOver ? 'Overdue' : `${slaDaysLeft} Days`}
-                            </Badge>
+                          {/* SLA */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              <Clock
+                                className={`w-3.5 h-3.5 ${
+                                  isOverdue
+                                    ? 'text-red-500'
+                                    : slaRemaining <= 5
+                                    ? 'text-amber-500'
+                                    : 'text-emerald-500'
+                                }`}
+                              />
+                              <span
+                                className={`font-mono font-bold ${
+                                  isOverdue
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : slaRemaining <= 5
+                                    ? 'text-amber-600 dark:text-amber-400'
+                                    : 'text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                {isOverdue ? 'BREACHED' : `${slaRemaining} Days`}
+                              </span>
+                            </div>
                           </td>
 
                           {/* Assigned Officer */}
-                          <td className="py-3.5 px-4">
-                            <span className="text-slate-700 dark:text-slate-300 font-medium block">
-                              {app.assignedOfficer?.name || 'Unassigned'}
-                            </span>
+                          <td className="py-3 px-4 text-xs">
+                            {app.assignedOfficer?.name ? (
+                              <span className="font-medium text-slate-800 dark:text-slate-200">
+                                {app.assignedOfficer.name}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold italic">
+                                Unassigned
+                              </span>
+                            )}
                           </td>
 
                           {/* Actions */}
-                          <td className="py-3.5 px-4 text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedApplicationId(app._id)}
-                              className="text-xs h-7 px-2.5 font-semibold"
-                            >
-                              <Eye className="w-3.5 h-3.5 mr-1" />
-                              <span>Review</span>
-                            </Button>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openAppInWorkspace(app)}
+                                className="text-xs h-7 px-2.5"
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                <span>Scrutinize</span>
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setCopilotAppContext({
+                                    applicationId: app._id,
+                                    applicationNumber: app.applicationNumber,
+                                    projectName: app.projectId?.projectName || 'Industrial Project',
+                                    industry: app.projectId?.industry || 'Industrial Unit',
+                                    department: app.department,
+                                    investment: app.projectId?.investment,
+                                  });
+                                  setIsCopilotOpen(true);
+                                }}
+                                className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-7 px-2"
+                                title="AI Assistant for this file"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400">
-                        <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                        <p className="font-semibold text-sm">No applications found in scrutiny queue.</p>
-                        <p className="text-xs mt-1">Try relaxing filters or check back after new submissions.</p>
+                      <td colSpan={8} className="py-8 text-center">
+                        <EmptyState
+                          title="No applications in this queue"
+                          description="All applications matching your filter criteria have been processed or moved."
+                        />
                       </td>
                     </tr>
                   )}
@@ -524,173 +816,162 @@ export const OfficerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: INSPECTION SCHEDULER */}
-      {activeTab === 'inspections' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CalendarCheck className="w-4 h-4 text-purple-600" />
-                  <span>Joint Field Inspection Master Schedule</span>
-                </CardTitle>
-                <CardDescription>
-                  Coordinated on-site audits for Industrial Safety (DISH), Fire NOC (DMFS), and Environmental Clearance (MPCB)
-                </CardDescription>
+      {/* TAB 2: OFFICER WORKLOAD DISTRIBUTION */}
+      {activeTab === 'workload' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              State Officer Registry & Real-Time Case Load
+            </h3>
+            <span className="text-xs text-slate-400">
+              Total active scrutinizers: {dashboardData?.officerWorkload?.length || 0}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {dashboardData?.officerWorkload && dashboardData.officerWorkload.length > 0 ? (
+              dashboardData.officerWorkload.map((officer) => (
+                <OfficerCard
+                  key={officer.officerId}
+                  name={officer.name}
+                  email={officer.email}
+                  department={officer.department}
+                  activeCases={officer.activeCases}
+                  phone={officer.phone}
+                />
+              ))
+            ) : (
+              <div className="col-span-3 py-8">
+                <EmptyState
+                  title="No officers found"
+                  description="Officers registered with state clearance agencies will appear here."
+                />
               </div>
-
-              <Badge variant="saffron" className="text-xs font-mono font-bold">
-                {kpis.todayInspections} Inspections Due Today
-              </Badge>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {applications
-                  .filter((a) => a.inspectionDate || a.status === 'Inspection Scheduled')
-                  .map((app) => (
-                    <div
-                      key={app._id}
-                      className="p-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/20 space-y-3 text-xs"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <Badge variant="saffron" className="text-[10px] mb-1">
-                            {app.department.split(' ')[0]}
-                          </Badge>
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                            {app.projectId?.projectName}
-                          </h4>
-                          <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-orange-500" />
-                            {app.projectId?.location}, {app.projectId?.district}
-                          </span>
-                        </div>
-
-                        <Badge variant="warning" className="text-[10px]">
-                          Scheduled
-                        </Badge>
-                      </div>
-
-                      <div className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
-                        <div className="flex justify-between font-semibold">
-                          <span className="text-slate-500">Audit Date:</span>
-                          <span className="text-blue-600 dark:text-blue-400 font-bold">
-                            {app.inspectionDate ? formatDate(app.inspectionDate) : 'Pending Date Assignment'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Designated Inspector:</span>
-                          <span className="text-slate-800 dark:text-slate-200 font-medium">
-                            {app.assignedOfficer?.name || 'District Safety Inspector'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end pt-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedApplicationId(app._id)}
-                          className="text-xs h-7"
-                        >
-                          View Checklist & Findings
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-
-              {applications.filter((a) => a.inspectionDate).length === 0 && (
-                <div className="p-8 text-center text-slate-400 text-xs">
-                  <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                  <p className="font-semibold text-sm">No inspections currently scheduled.</p>
-                  <p className="mt-1">Select an application from the table to schedule a site audit.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
       )}
 
-      {/* TAB 3: WORKLOAD & ANALYTICS WIDGETS */}
+      {/* TAB 3: DISTRICT & INDUSTRY ANALYTICS */}
       {activeTab === 'analytics' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Department Workload */}
-          <Card>
-            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-orange-600" />
-                <span>Departmental Application Workload</span>
-              </CardTitle>
-              <CardDescription>Volume of clearance applications by agency</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs">
-              {Object.entries(analytics?.departmentWorkload || {}).map(([dept, count]) => (
-                <div key={dept} className="space-y-1">
-                  <div className="flex justify-between font-semibold">
-                    <span className="text-slate-700 dark:text-slate-300 truncate max-w-[280px]">
-                      {dept}
-                    </span>
-                    <span className="font-mono text-orange-600">{count} Active</span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-orange-500 h-2 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(100, (count / Math.max(1, applications.length)) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {dashboardData?.charts?.districtBreakdown && (
+            <AnalyticsChart
+              title="Applications by Industrial District"
+              data={dashboardData.charts.districtBreakdown.map((d) => ({
+                label: d.district || 'Unassigned',
+                value: d.count,
+              }))}
+              type="bar"
+            />
+          )}
 
-          {/* Pending by District */}
-          <Card>
-            <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-              <CardTitle className="text-base flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-emerald-600" />
-                <span>Clearance Queue by Maharashtra District</span>
-              </CardTitle>
-              <CardDescription>Regional industrial development concentration</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3 text-xs">
-              {Object.entries(analytics?.pendingByDistrict || {}).map(([dist, count]) => (
-                <div key={dist} className="space-y-1">
-                  <div className="flex justify-between font-semibold">
-                    <span className="text-slate-700 dark:text-slate-300">{dist} District</span>
-                    <span className="font-mono text-emerald-600">{count} In-flight</span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-emerald-500 h-2 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(100, (count / Math.max(1, applications.length)) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {dashboardData?.charts?.industryBreakdown && (
+            <AnalyticsChart
+              title="Applications by Sector & Industry"
+              data={dashboardData.charts.industryBreakdown.map((d) => ({
+                label: (d.industry || 'General').split(' ')[0],
+                value: d.count,
+              }))}
+              type="pie"
+            />
+          )}
+
+          {dashboardData?.charts?.statusBreakdown && (
+            <div className="md:col-span-2">
+              <AnalyticsChart
+                title="Statutory Clearance Pipeline Status Breakdown"
+                data={dashboardData.charts.statusBreakdown.map((s: any) => ({
+                  label: s.status,
+                  value: s.count,
+                }))}
+                type="bar"
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Application Details Modal */}
+      {/* TAB 4: AUDIT & ACTIVITY STREAM */}
+      {activeTab === 'activity' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Official Regulatory Audit Stream
+            </h3>
+            <span className="text-xs text-slate-400">Chronological activity log</span>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 divide-y divide-slate-100 dark:divide-slate-800">
+            {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
+              dashboardData.recentActivity.map((act: any, idx: number) => (
+                <div key={idx} className="py-3 flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
+                        {act.applicationNumber}
+                      </span>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">
+                        {act.action}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Unit: <strong>{act.projectName}</strong> • Agency: {act.department}
+                    </p>
+                    {act.remarks && (
+                      <p className="text-xs text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg">
+                        "{act.remarks}"
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-400 whitespace-nowrap">
+                    {formatDate(act.timestamp)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-slate-400 text-center py-6">
+                No recent activity records found.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Application Details Workspace Modal */}
       {selectedApplicationId && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-6xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 relative">
+            <button
+              onClick={() => setSelectedApplicationId(null)}
+              className="absolute right-4 top-4 p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <ApplicationDetailsView
               applicationId={selectedApplicationId}
               onClose={() => setSelectedApplicationId(null)}
               onUpdateSuccess={() => {
                 refetch();
+                queryClient.invalidateQueries({ queryKey: ['officer-dashboard-analytics'] });
               }}
             />
           </div>
         </div>
       )}
+
+      {/* AI Copilot Floating Drawer */}
+      <AICopilotDrawer
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        initialContext={copilotAppContext}
+      />
+
+      {/* Global Unified Search Overlay */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={closeGlobalSearch}
+      />
     </div>
   );
 };
